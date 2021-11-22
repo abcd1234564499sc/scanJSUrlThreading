@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="图片">
+    <file>开始.png</file>
+    <file>中止.png</file>
+    <file>打开文件.png</file>
+    <file>icon.png</file>
+  </qresource>
+</RCC>

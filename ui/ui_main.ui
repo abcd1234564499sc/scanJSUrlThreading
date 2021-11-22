@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Main_Form</class>
+ <widget class="QWidget" name="Main_Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1044</width>
+    <height>739</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>JS中URL扫描器</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../resource/source.qrc">
+    <normaloff>:/图片/icon.png</normaloff>:/图片/icon.png</iconset>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_5">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,20,1">
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0,5,0">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>目标地址</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="plainTextEdit"/>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0">
+         <item>
+          <widget class="QPushButton" name="pushButton_4">
+           <property name="text">
+            <string>文件导入</string>
+           </property>
+           <property name="icon">
+            <iconset resource="../resource/source.qrc">
+             <normaloff>:/图片/打开文件.png</normaloff>:/图片/打开文件.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="3,1,3">
+           <item>
+            <widget class="QPushButton" name="pushButton">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../resource/source.qrc">
+               <normaloff>:/图片/开始.png</normaloff>:/图片/开始.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_2">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../resource/source.qrc">
+               <normaloff>:/图片/中止.png</normaloff>:/图片/中止.png</iconset>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>爬取到的js文件</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTextEdit" name="textEdit">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item alignment="Qt::AlignHCenter">
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>请求结果</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="tableWidget"/>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLineEdit" name="lineEdit_2">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_3">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>导出结果</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../resource/source.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Main_Form</receiver>
+   <slot>startCrawl()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>927</x>
+     <y>67</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1032</x>
+     <y>70</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>Main_Form</receiver>
+   <slot>terminateCrawl()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1026</x>
+     <y>67</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1043</x>
+     <y>120</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_3</sender>
+   <signal>clicked()</signal>
+   <receiver>Main_Form</receiver>
+   <slot>exportResult()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1015</x>
+     <y>700</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1043</x>
+     <y>670</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_4</sender>
+   <signal>clicked()</signal>
+   <receiver>Main_Form</receiver>
+   <slot>selectUrlFromFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>814</x>
+     <y>56</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>853</x>
+     <y>6</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>startCrawl()</slot>
+  <slot>terminateCrawl()</slot>
+  <slot>exportResult()</slot>
+  <slot>selectUrlFromFile()</slot>
+ </slots>
+</ui>
