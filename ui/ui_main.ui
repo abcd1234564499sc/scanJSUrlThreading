@@ -19,9 +19,9 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,20,1">
+    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,121,1">
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0,5,0">
+      <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,12,2">
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
@@ -33,7 +33,7 @@
         <widget class="QPlainTextEdit" name="plainTextEdit"/>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0">
+        <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
           <widget class="QPushButton" name="pushButton_4">
            <property name="text">
@@ -44,6 +44,27 @@
              <normaloff>:/图片/打开文件.png</normaloff>:/图片/打开文件.png</iconset>
            </property>
           </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0,0">
+           <item alignment="Qt::AlignHCenter">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>最大线程数</string>
+             </property>
+            </widget>
+           </item>
+           <item alignment="Qt::AlignHCenter">
+            <widget class="QLineEdit" name="lineEdit">
+             <property name="text">
+              <string>50</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="3,1,3">

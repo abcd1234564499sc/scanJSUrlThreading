@@ -31,8 +31,8 @@ class Main(QWidget, Ui_Main_Form):
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         self.urlScrapy = None
 
-    def createCrawlObj(self, scrawlUrlArr=[]):
-        urlScrapy = UrlScrapyManage(scrawlUrlArr=scrawlUrlArr)
+    def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50):
+        urlScrapy = UrlScrapyManage(scrawlUrlArr=scrawlUrlArr, maxThreadCount=maxThreadCount)
         urlScrapy.signal_log[str].connect(self.writeLog)
         urlScrapy.signal_log[str, str].connect(self.writeLog)
         urlScrapy.signal_result.connect(self.writeResult)
@@ -41,17 +41,33 @@ class Main(QWidget, Ui_Main_Form):
         return urlScrapy
 
     def startCrawl(self):
-        nowUrlArr = [a for a in self.plainTextEdit.toPlainText().split("\n") if a != ""]
+        # 清空日志区域
         self.textEdit.setText("")
+        # 获取最大线程数
+        maxThreadCount = self.lineEdit.text()
+        # 判断输入线程数是否为正整数
+        if maxThreadCount.isdigit():
+            maxThreadCount = int(maxThreadCount)
+        else:
+            self.writeLog("输入的最大线程数必须为一个正整数", color="red")
+            return
+        # 获取初始URL
+        nowUrlArr = [a for a in self.plainTextEdit.toPlainText().split("\n") if a != ""]
+        if len(nowUrlArr) == 0:
+            self.writeLog("请输入需要扫描的URL", color="red")
+            return
+        # 判断输入的URL是否符合URL格式
         for index, nowUrl in enumerate(nowUrlArr):
             if nowUrl == "" or not self.urlRegex.match(nowUrl):
                 self.writeLog("输入的第{0}行URL格式不正确，请输入正确格式的URL".format(index + 1), color="red")
                 return
+        # 清空结果区域
         self.clearTable()
+        # 设置按钮状态
         self.pushButton.setEnabled(False)
         self.pushButton_2.setEnabled(True)
 
-        self.urlScrapy = self.createCrawlObj(nowUrlArr)
+        self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount)
 
         try:
             self.urlScrapy.start()
@@ -100,7 +116,7 @@ class Main(QWidget, Ui_Main_Form):
             self.tableWidget.setItem(nowRowCount, index, tempItem)
 
     def writeProgress(self, visitedCount, remainCount, threadCount):
-        log = "有{0}个线程正在访问URL，当前已完成{1}个URL的访问，还有{2}个URL需要访问".format(threadCount,visitedCount, remainCount)
+        log = "有{0}个线程正在访问URL，当前已完成{1}个URL的访问，还有{2}个URL需要访问".format(threadCount, visitedCount, remainCount)
         self.lineEdit_2.setText(log)
 
     def selectUrlFromFile(self):

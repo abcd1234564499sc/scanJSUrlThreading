@@ -15,7 +15,7 @@ class UrlScrapyManage(QThread):
     signal_progress = pyqtSignal(str, str, str)
     signal_end = pyqtSignal()
 
-    def __init__(self, scrawlUrlArr=[], parent=None):
+    def __init__(self, scrawlUrlArr=[], maxThreadCount=50, parent=None):
         super(UrlScrapyManage, self).__init__(parent)
         self.scrawlUrlArr = scrawlUrlArr
         self.scrawlUrl = ""
@@ -23,7 +23,7 @@ class UrlScrapyManage(QThread):
         self.urlQueue = Queue()
         self.processCount = 5
         self.resultList = []
-        self.maxThreadCount = 50
+        self.maxThreadCount = maxThreadCount
         self.threadPool = []
 
     def run(self):
@@ -71,7 +71,8 @@ class UrlScrapyManage(QThread):
             # 打印当前进度
             self.signal_progress.emit(str(visitedCount), str(scrapyWaitQueue.qsize()), str(len(self.threadPool)))
             time.sleep(1)
-
+        
+        self.signal_log.emit("")
         self.signal_log[str, str].emit("扫描结束", "blue")
         self.signal_end.emit()
 

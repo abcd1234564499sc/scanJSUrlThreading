@@ -3,6 +3,7 @@
 import datetime
 import re
 import urllib.parse
+import winreg
 
 import requests
 # 访问URL,type表示请求类型，0为GET，1为POST
@@ -89,7 +90,7 @@ def getUrlDomain(url):
 # 返回一个布尔值,属于返回True,否则返回False
 def ifSameMainDomain(domain1, domain2):
     reFlag = True
-    domainArr = [domain1,domain2]
+    domainArr = [domain1, domain2]
     if ifIp(domain1) != ifIp(domain2):
         # 判断是否是IP和域名比较
         reFlag = False
@@ -99,7 +100,7 @@ def ifSameMainDomain(domain1, domain2):
     else:
         # 两个参数都是域名
         # 去除端口号
-        for index,nowDomain in enumerate(domainArr):
+        for index, nowDomain in enumerate(domainArr):
             tempPort = nowDomain.split(":")[-1]
             if tempPort.isdigit():
                 # 去除端口号
@@ -123,9 +124,13 @@ def getUrlFileSuffix(url):
     reSuffix = urlObj[2].split("/")[-1].split(".")[-1]
     return reSuffix
 
+
 # 获得精确到秒的当前时间
 def getNowSeconed():
     formatStr = "%Y-%m-%d %H:%M:%S"
     nowDate = datetime.datetime.now()
     nowDateStr = nowDate.strftime(formatStr)
     return nowDateStr
+
+
+
