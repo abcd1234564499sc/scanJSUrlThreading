@@ -71,7 +71,7 @@ class UrlScrapyManage(QThread):
             # 打印当前进度
             self.signal_progress.emit(str(visitedCount), str(scrapyWaitQueue.qsize()), str(len(self.threadPool)))
             time.sleep(1)
-        
+
         self.signal_log.emit("")
         self.signal_log[str, str].emit("扫描结束", "blue")
         self.signal_end.emit()

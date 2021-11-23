@@ -13,7 +13,7 @@ import myUtils
 class UrlScrapyThreading(QThread):
     signal_end = pyqtSignal(str)
 
-    def __init__(self,scrawlUrl, parent=None):
+    def __init__(self, scrawlUrl, parent=None):
         super(UrlScrapyThreading, self).__init__(parent)
         self.scrawlUrl = scrawlUrl
 
@@ -52,7 +52,7 @@ class UrlScrapyThreading(QThread):
                 reHtmlDic = self.analysisHtmlPage(pageUrl=tempDic["url"], pageContent=content)
                 reAList = reHtmlDic["a"]
                 reJsList = reHtmlDic["js"]
-                reLinkList = reAList+reJsList
+                reLinkList = reAList + reJsList
 
             # 构建返回结果
             reDic = {}

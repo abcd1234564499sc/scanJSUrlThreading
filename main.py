@@ -3,7 +3,9 @@
 import json
 import re
 import sys
+import warnings
 
+import openpyxl as oxl
 from PyQt5.QtCore import QDir
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QApplication, QWidget, QHeaderView, QTableWidgetItem, QFileDialog
@@ -30,6 +32,7 @@ class Main(QWidget, Ui_Main_Form):
             r'(?::\d+)?'  # optional port
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         self.urlScrapy = None
+        warnings.filterwarnings("ignore")
 
     def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50):
         urlScrapy = UrlScrapyManage(scrawlUrlArr=scrawlUrlArr, maxThreadCount=maxThreadCount)
@@ -79,16 +82,37 @@ class Main(QWidget, Ui_Main_Form):
         if nowCount == 0:
             self.writeLog("当前无可导出数据", color="red")
             return
-        filename = "导出文件-" + myUtils.getNowSeconed().replace("-", "").replace(" ", "").replace(":", "") + ".csv"
-        # 遍历当前表格
-        with open(filename, "w+", encoding="utf-8") as fr:
-            fr.write("序号,URL,响应码,标题\n")
-            for rowIndex in range(nowCount):
-                nowUrl = self.tableWidget.item(rowIndex, 0).text()
-                nowStatus = self.tableWidget.item(rowIndex, 1).text()
-                nowTitle = self.tableWidget.item(rowIndex, 2).text()
-                fr.write("{0},{1},{2},{3}\n".format(rowIndex + 1, nowUrl, nowStatus, nowTitle))
-        self.writeLog("成功生成文件：" + filename)
+        filename = "导出文件-" + myUtils.getNowSeconed().replace("-", "").replace(" ", "").replace(":", "")
+        # 创建一个excell文件对象
+        wb = oxl.Workbook()
+        ws = wb.active
+        ws.title = "URL扫描结果"
+        # 创建表头
+        headArr = ["序号", "URL", "响应码", "标题"]
+        myUtils.writeExcellHead(ws, headArr)
+
+        # 遍历当前结果
+        for rowIndex in range(nowCount):
+            # 获取当前行的值
+            nowUrl = self.tableWidget.item(rowIndex, 0).text()
+            nowStatus = self.tableWidget.item(rowIndex, 1).text()
+            nowTitle = self.tableWidget.item(rowIndex, 2).text()
+
+            # 将值写入excell对象
+            myUtils.writeExcellCell(ws, rowIndex + 2, 1, rowIndex + 1, 0, True)
+            myUtils.writeExcellCell(ws, rowIndex + 2, 2, nowUrl, 0, False, hyperLink=nowUrl)
+            myUtils.writeExcellCell(ws, rowIndex + 2, 3, nowStatus, 0, True)
+            myUtils.writeExcellCell(ws, rowIndex + 2, 4, nowTitle, 0, True)
+            myUtils.writeExcellSpaceCell(ws, rowIndex + 2, 5)
+
+        # 设置列宽
+        colWidthArr = [7, 70, 7, 60]
+        myUtils.setExcellColWidth(ws, colWidthArr)
+
+        # 保存文件
+        myUtils.saveExcell(wb, saveName=filename)
+        self.writeLog("")
+        self.writeLog("成功保存文件：{0}.xlsx 至当前文件夹".format(filename), color="blue")
 
     def clearTable(self):
         while self.tableWidget.rowCount() != 0:
@@ -99,6 +123,9 @@ class Main(QWidget, Ui_Main_Form):
         self.pushButton_2.setEnabled(False)
         self.urlScrapy.terminate()
         self.urlScrapy.quit()
+        self.writeLog("")
+        self.writeLog("扫描提前中断", color="red")
+        self.writeProgress(0, 0, 0)
 
     def writeLog(self, log, color="black"):
         colorDic = {"black": "#000000", "red": "#FF0000", "yellow": "#FFFF00", "blue": "#0000FF"}
