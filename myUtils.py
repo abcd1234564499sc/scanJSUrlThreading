@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 import datetime
+import json
 import os
 import re
 import urllib.parse
@@ -45,7 +46,7 @@ def requestsUrl(url, cookie={}, data={}, type=0, reqTimeout=5, readTimeout=5):
             response = requests.post(url, headers=header, verify=False, cookies=cookie, data=data,
                                      timeout=timeout)
         status = response.status_code
-        if status == requests.codes.ok:
+        if str(status)[0] == "2" or str(status)[0] == "3":
             # 获得页面编码
             pageEncoding = response.apparent_encoding
             # 设置页面编码
@@ -274,3 +275,41 @@ def saveExcell(wb, saveName):
         deleteFile(savePath)
     wb.save(savePath)
     return True
+
+
+# 根据传入的contentDic写入配置文件，若配置文件不存在会创建
+# contentDic格式为：{"配置名":"配置值"}，
+# 对list和dict格式的值会使用json.dumps进行转换
+def writeToConfFile(filePath, contentDic):
+    with open(filePath, "w+", encoding="utf-8") as fr:
+        for key, value in contentDic.items():
+            if isinstance(value, list) or isinstance(value, dict):
+                value = json.dumps(value)
+            content = "{0}={1}".format(key, value)
+            fr.write(content + "\n")
+
+
+# 读取配置文件，生成一个配置字典，
+# 字典结构为：{"配置名":"配置值"}，
+# 文件结构为：配置名=配置值，对list和dict格式的值会使用json.loads进行转换
+# 配置字典的最后一项固定为"confHeader":配置名列表
+def readConfFile(filePath):
+    confDic = {}
+    headerList= []
+    with open(filePath, "r", encoding="utf-8") as fr:
+        fileLines = fr.readlines()
+    fileLines = [a.replace("\r\n","\n").replace("\n","") for a in fileLines if a!=""]
+    for fileLine in fileLines:
+        fileLine = fileLine.replace("\r\n", "\n").replace("\n", "")
+        tempList = fileLine.split("=")
+        key = tempList[0].strip()
+        value = "=".join(tempList[1:]).strip()
+        try:
+            value = json.loads(value)
+        except:
+            pass
+        confDic[key] = value
+        headerList.append(key)
+    confDic["confHeader"]=headerList
+
+    return confDic

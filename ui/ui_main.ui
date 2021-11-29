@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1044</width>
-    <height>739</height>
+    <height>843</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,13 +17,19 @@
    <iconset resource="../resource/source.qrc">
     <normaloff>:/图片/icon.png</normaloff>:/图片/icon.png</iconset>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_5">
+  <layout class="QVBoxLayout" name="verticalLayout_6">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,121,1">
+    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,8,15,1">
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,12,2">
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
         <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>目标地址</string>
          </property>
@@ -46,28 +52,7 @@
           </widget>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0,0">
-           <item alignment="Qt::AlignHCenter">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>最大线程数</string>
-             </property>
-            </widget>
-           </item>
-           <item alignment="Qt::AlignHCenter">
-            <widget class="QLineEdit" name="lineEdit">
-             <property name="text">
-              <string>50</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="3,1,3">
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
             <widget class="QPushButton" name="pushButton">
              <property name="text">
@@ -78,19 +63,6 @@
                <normaloff>:/图片/开始.png</normaloff>:/图片/开始.png</iconset>
              </property>
             </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
            </item>
            <item>
             <widget class="QPushButton" name="pushButton_2">
@@ -106,6 +78,17 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_5">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../resource/source.qrc">
+               <normaloff>:/图片/设置.png</normaloff>:/图片/设置.png</iconset>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>
@@ -113,36 +96,96 @@
       </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>爬取到的js文件</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTextEdit" name="textEdit">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+        <widget class="QLabel" name="label_2">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>11</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>运行日志</string>
+         </property>
+        </widget>
        </item>
+       <item>
+        <widget class="QTextEdit" name="textEdit">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
         <layout class="QVBoxLayout" name="verticalLayout">
          <item alignment="Qt::AlignHCenter">
           <widget class="QLabel" name="label_3">
+           <property name="font">
+            <font>
+             <family>Arial</family>
+             <pointsize>11</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
            <property name="text">
             <string>请求结果</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QTableWidget" name="tableWidget"/>
+          <widget class="QTableWidget" name="tableWidget">
+           <property name="sortingEnabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item alignment="Qt::AlignRight">
+          <widget class="QCheckBox" name="checkBox">
+           <property name="text">
+            <string>显示过滤内容</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item alignment="Qt::AlignHCenter">
+          <widget class="QLabel" name="label_5">
+           <property name="font">
+            <font>
+             <family>Arial</family>
+             <pointsize>11</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>敏感信息</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="tableWidget_2">
+           <property name="sortingEnabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -184,8 +227,8 @@
    <slot>startCrawl()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>927</x>
-     <y>67</y>
+     <x>960</x>
+     <y>84</y>
     </hint>
     <hint type="destinationlabel">
      <x>1032</x>
@@ -200,8 +243,8 @@
    <slot>terminateCrawl()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1026</x>
-     <y>67</y>
+     <x>995</x>
+     <y>84</y>
     </hint>
     <hint type="destinationlabel">
      <x>1043</x>
@@ -216,8 +259,8 @@
    <slot>exportResult()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1015</x>
-     <y>700</y>
+     <x>1032</x>
+     <y>823</y>
     </hint>
     <hint type="destinationlabel">
      <x>1043</x>
@@ -232,12 +275,44 @@
    <slot>selectUrlFromFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>814</x>
-     <y>56</y>
+     <x>1031</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
      <x>853</x>
      <y>6</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_5</sender>
+   <signal>clicked()</signal>
+   <receiver>Main_Form</receiver>
+   <slot>openConfWindow()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1015</x>
+     <y>77</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1043</x>
+     <y>33</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>Main_Form</receiver>
+   <slot>ifShowFilterChnage()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>459</x>
+     <y>789</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>8</x>
+     <y>788</y>
     </hint>
    </hints>
   </connection>
@@ -247,5 +322,7 @@
   <slot>terminateCrawl()</slot>
   <slot>exportResult()</slot>
   <slot>selectUrlFromFile()</slot>
+  <slot>openConfWindow()</slot>
+  <slot>ifShowFilterChnage()</slot>
  </slots>
 </ui>

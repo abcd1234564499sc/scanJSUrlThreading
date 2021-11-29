@@ -10,12 +10,13 @@ from UrlScrapyThreading import UrlScrapyThreading
 
 
 class UrlScrapyManage(QThread):
-    signal_result = pyqtSignal(str)
+    signal_url_result = pyqtSignal(str)
+    signal_sensive_result = pyqtSignal(str)
     signal_log = pyqtSignal([str], [str, str])
     signal_progress = pyqtSignal(str, str, str)
-    signal_end = pyqtSignal()
+    signal_end = pyqtSignal(bool)
 
-    def __init__(self, scrawlUrlArr=[], maxThreadCount=50, parent=None):
+    def __init__(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], parent=None):
         super(UrlScrapyManage, self).__init__(parent)
         self.scrawlUrlArr = scrawlUrlArr
         self.scrawlUrl = ""
@@ -25,6 +26,7 @@ class UrlScrapyManage(QThread):
         self.resultList = []
         self.maxThreadCount = maxThreadCount
         self.threadPool = []
+        self.sensiveKeyList = sensiveKeyList
 
     def run(self):
         self.signal_log[str, str].emit("扫描开始", "blue")
@@ -43,7 +45,7 @@ class UrlScrapyManage(QThread):
             # 将url队列中所有URL取出并创建线程，加入候选线程队列
             while not self.urlQueue.empty():
                 nowUrl = self.urlQueue.get()
-                nowScrapyThread = self.createThreadObj(nowUrl)
+                nowScrapyThread = self.createThreadObj(nowUrl,self.sensiveKeyList)
                 scrapyWaitQueue.put(nowScrapyThread)
 
             # 遍历线程池，将已经完成的线程移除
@@ -74,10 +76,10 @@ class UrlScrapyManage(QThread):
 
         self.signal_log.emit("")
         self.signal_log[str, str].emit("扫描结束", "blue")
-        self.signal_end.emit()
+        self.signal_end.emit(True)
 
-    def createThreadObj(self, scrawlUrl=""):
-        threadObj = UrlScrapyThreading(scrawlUrl)
+    def createThreadObj(self, scrawlUrl="", sensiveKeyList=[]):
+        threadObj = UrlScrapyThreading(scrawlUrl, sensiveKeyList)
         threadObj.signal_end.connect(self.solveThreadResult)
         return threadObj
 
@@ -86,6 +88,7 @@ class UrlScrapyManage(QThread):
         if reDicStr != "":
             reDic = json.loads(reDicStr)
             reLinkList = reDic.pop("linkList")
+            reSensiveList = reDic.pop("sensiveInfoList")
             # 写入新的链接
             for tempLink in reLinkList:
                 if tempLink not in self.vistedLinkList:
@@ -95,6 +98,8 @@ class UrlScrapyManage(QThread):
                     pass
             # 显示结果
             reDicStr = json.dumps(reDic)
-            self.signal_result.emit(reDicStr)
+            self.signal_url_result.emit(reDicStr)
+            reSensiveStr = json.dumps(reSensiveList)
+            self.signal_sensive_result.emit(reSensiveStr)
         else:
             pass

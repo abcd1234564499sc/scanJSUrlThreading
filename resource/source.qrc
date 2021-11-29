@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="图片">
+    <file>加号.png</file>
+    <file>减号.png</file>
+    <file>设置.png</file>
     <file>开始.png</file>
     <file>中止.png</file>
     <file>打开文件.png</file>

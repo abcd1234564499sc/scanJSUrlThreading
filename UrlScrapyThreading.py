@@ -13,9 +13,10 @@ import myUtils
 class UrlScrapyThreading(QThread):
     signal_end = pyqtSignal(str)
 
-    def __init__(self, scrawlUrl, parent=None):
+    def __init__(self, scrawlUrl,sensiveKeyList=[], parent=None):
         super(UrlScrapyThreading, self).__init__(parent)
         self.scrawlUrl = scrawlUrl
+        self.sensiveKeyList = sensiveKeyList
 
     def run(self):
         reDicStr = self.scrapyProcess(self.scrawlUrl)
@@ -25,7 +26,15 @@ class UrlScrapyThreading(QThread):
         return self.scrawlUrl
 
     # 访问并分析URL，生成多个能正常访问的结果字典并写入结果队列
-    # 字典结构为：{"url":"访问地址","status":"响应码","title":"标题","linkList":"当前页面的URL列表（已去重）"}
+    # 字典结构为：
+    # {
+    # "url":"访问地址",
+    # "status":"响应码",
+    # "title":"标题",
+    # "contentLength":"包长",
+    # "linkList":"当前页面的URL列表（已去重）",
+    # "sensiveInfoList":"当前页面存在的敏感字典列表信息，字典格式为：{"url":当前URL,"key":匹配关键词,"seneiveStr":敏感信息}"
+    # }
     def scrapyProcess(self, url):
         reDicStr = ""
 
@@ -54,12 +63,17 @@ class UrlScrapyThreading(QThread):
                 reJsList = reHtmlDic["js"]
                 reLinkList = reAList + reJsList
 
+            # 分析敏感信息
+            sensiveInfoList = self.analysisSensiveInfo(url,content)
+
             # 构建返回结果
             reDic = {}
             reDic["url"] = url
             reDic["status"] = status
             reDic["title"] = title
+            reDic["contentLength"] = len(content)
             reDic["linkList"] = reLinkList
+            reDic["sensiveInfoList"] = sensiveInfoList
             reDicStr = json.dumps(reDic)
         else:  # if reDic["checkFlag"]
             pass
@@ -141,4 +155,34 @@ class UrlScrapyThreading(QThread):
 
         # 去重
         reList = list(set(reList))
+        return reList
+
+    # 分析页面中的敏感信息，返回敏感信息字典的列表，
+    # 字典格式为：{"url":当前URL,"key":匹配关键词,"seneiveStr":敏感信息}
+    def analysisSensiveInfo(self, pageUrl="", pageContent=""):
+        reList = []
+
+        # 定义敏感信息键值列表
+        sensiveKeyList = self.sensiveKeyList
+
+        # 替换页面源码的换行符
+        pageContent = pageContent.replace("\r\n", "\n")
+        # 按行分割源码
+        pageContentArr = pageContent.split("\n")
+        # 按行分析源码
+        for pageLine in pageContentArr:
+            for sensiveKey in sensiveKeyList:
+                splitArr = pageLine.split(sensiveKey)
+                if len(splitArr) >= 2:
+                    # 表示存在该关键词，从关键词开始截取当行
+                    tempLineStr = sensiveKey + sensiveKey.join(splitArr[1:])
+                    if len(tempLineStr) > 50:
+                        # 若当前行过长，判断为压缩后的js文件等特殊情况，只截取前50个字符
+                        tempLineStr = tempLineStr[:50]
+                    else:
+                        pass
+                    reList.append({"url":pageUrl,"key":sensiveKey,"seneiveStr":tempLineStr})
+                else:
+                    pass
+
         return reList
