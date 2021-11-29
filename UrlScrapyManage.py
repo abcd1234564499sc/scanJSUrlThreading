@@ -45,7 +45,7 @@ class UrlScrapyManage(QThread):
             # 将url队列中所有URL取出并创建线程，加入候选线程队列
             while not self.urlQueue.empty():
                 nowUrl = self.urlQueue.get()
-                nowScrapyThread = self.createThreadObj(nowUrl,self.sensiveKeyList)
+                nowScrapyThread = self.createThreadObj(nowUrl, self.sensiveKeyList)
                 scrapyWaitQueue.put(nowScrapyThread)
 
             # 遍历线程池，将已经完成的线程移除

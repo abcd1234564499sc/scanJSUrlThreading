@@ -13,7 +13,7 @@ import myUtils
 class UrlScrapyThreading(QThread):
     signal_end = pyqtSignal(str)
 
-    def __init__(self, scrawlUrl,sensiveKeyList=[], parent=None):
+    def __init__(self, scrawlUrl, sensiveKeyList=[], parent=None):
         super(UrlScrapyThreading, self).__init__(parent)
         self.scrawlUrl = scrawlUrl
         self.sensiveKeyList = sensiveKeyList
@@ -64,7 +64,7 @@ class UrlScrapyThreading(QThread):
                 reLinkList = reAList + reJsList
 
             # 分析敏感信息
-            sensiveInfoList = self.analysisSensiveInfo(url,content)
+            sensiveInfoList = self.analysisSensiveInfo(url, content)
 
             # 构建返回结果
             reDic = {}
@@ -181,7 +181,7 @@ class UrlScrapyThreading(QThread):
                         tempLineStr = tempLineStr[:50]
                     else:
                         pass
-                    reList.append({"url":pageUrl,"key":sensiveKey,"seneiveStr":tempLineStr})
+                    reList.append({"url": pageUrl, "key": sensiveKey, "seneiveStr": tempLineStr})
                 else:
                     pass
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-import time
 
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QDialog, QHeaderView, QTableWidgetItem, QMessageBox, QComboBox
@@ -94,7 +93,7 @@ class ConfWindow(QDialog, Ui_Dialog):
             nowFilterAim = int(self.tableWidget1.cellWidget(index, 0).currentData())
             nowFilterCondition = int(self.tableWidget1.cellWidget(index, 1).currentData())
             nowFilterValueItem = self.tableWidget1.item(index, 2)
-            if nowFilterValueItem is None or nowFilterValueItem.text()=="":
+            if nowFilterValueItem is None or nowFilterValueItem.text() == "":
                 warningStr = "扫描结果过滤列表第{0}行数据为空".format(index + 1)
                 self.writeWarning(warningStr)
                 return

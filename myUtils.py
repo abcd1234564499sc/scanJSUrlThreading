@@ -295,10 +295,10 @@ def writeToConfFile(filePath, contentDic):
 # 配置字典的最后一项固定为"confHeader":配置名列表
 def readConfFile(filePath):
     confDic = {}
-    headerList= []
+    headerList = []
     with open(filePath, "r", encoding="utf-8") as fr:
         fileLines = fr.readlines()
-    fileLines = [a.replace("\r\n","\n").replace("\n","") for a in fileLines if a!=""]
+    fileLines = [a.replace("\r\n", "\n").replace("\n", "") for a in fileLines if a != ""]
     for fileLine in fileLines:
         fileLine = fileLine.replace("\r\n", "\n").replace("\n", "")
         tempList = fileLine.split("=")
@@ -310,6 +310,6 @@ def readConfFile(filePath):
             pass
         confDic[key] = value
         headerList.append(key)
-    confDic["confHeader"]=headerList
+    confDic["confHeader"] = headerList
 
     return confDic

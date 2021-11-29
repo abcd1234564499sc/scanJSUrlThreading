@@ -118,7 +118,7 @@ class Main(QWidget, Ui_Main_Form):
                 self.tableWidget.item(index, 4).setText("0")
                 # 设置当前行的背景色
                 for colIndex in range(self.tableWidget.columnCount()):
-                    self.tableWidget.item(index,colIndex).setBackground(QBrush(QColor(136, 136, 136)))
+                    self.tableWidget.item(index, colIndex).setBackground(QBrush(QColor(136, 136, 136)))
                 # 设置是否显示当前行
                 if self.checkBox.checkState() == 0:
                     ifHidden = True
@@ -130,9 +130,9 @@ class Main(QWidget, Ui_Main_Form):
                 self.tableWidget.item(index, 4).setText("1")
                 # 设置当前行的背景色
                 for colIndex in range(self.tableWidget.columnCount()):
-                    self.tableWidget.item(index,colIndex).setBackground(QBrush(QColor(255,255,255)))
+                    self.tableWidget.item(index, colIndex).setBackground(QBrush(QColor(255, 255, 255)))
                 # 设置显示当前行
-                self.tableWidget.setRowHidden(index,False)
+                self.tableWidget.setRowHidden(index, False)
         self.confDic = reConfDic
 
     def startCrawl(self):
