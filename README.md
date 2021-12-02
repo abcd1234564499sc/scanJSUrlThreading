@@ -1,8 +1,9 @@
 # 扫描网站JS中的URL（多线程版）    
 开发语言：python  
 使用图形界面库：pyqt5  
-多线程库：QThread
-使用pyinstaller打包成exe可执行程序  
+多线程库：QThread  
+使用pyinstaller打包成exe可执行程序   
+是用来扫描JS中URL的扫描器，程序处理流程如下：   
 1、输入一个URL   
 2、自动获取网站上a标签的链接（只获取与输入URL主域名相同的链接），加入爬虫列表   
 3、自动获取网站上script标签的js链接 ，加入爬虫列表   
