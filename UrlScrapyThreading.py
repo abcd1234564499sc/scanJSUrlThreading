@@ -13,10 +13,11 @@ import myUtils
 class UrlScrapyThreading(QThread):
     signal_end = pyqtSignal(str)
 
-    def __init__(self, scrawlUrl, sensiveKeyList=[], parent=None):
+    def __init__(self, scrawlUrl, sensiveKeyList=[], startUrl="", parent=None):
         super(UrlScrapyThreading, self).__init__(parent)
         self.scrawlUrl = scrawlUrl
         self.sensiveKeyList = sensiveKeyList
+        self.startUrl = startUrl
 
     def run(self):
         reDicStr = self.scrapyProcess(self.scrawlUrl)
@@ -55,13 +56,18 @@ class UrlScrapyThreading(QThread):
             reLinkList = []
             if urlSuffix == "js":
                 # 是js文件，使用js文件分析方法分析
-                reLinkList = self.analysisJSPage(myUtils.getUrlDomain(self.scrawlUrl), url, content)
+                tempLinkList = self.analysisJSPage(self.scrawlUrl, url, content)
+                for tempLink in tempLinkList:
+                    reLinkList.append((tempLink,self.startUrl))
             else:  # if urlSuffix == "js":
                 # 不是js文件，按HTML文件分析方法分析
                 reHtmlDic = self.analysisHtmlPage(pageUrl=tempDic["url"], pageContent=content)
                 reAList = reHtmlDic["a"]
                 reJsList = reHtmlDic["js"]
-                reLinkList = reAList + reJsList
+                tempLinkList = reAList + reJsList
+                for tempLink in tempLinkList:
+                    reLinkList.append((tempLink,self.startUrl))
+
 
             # 分析敏感信息
             sensiveInfoList = self.analysisSensiveInfo(url, content)
@@ -123,14 +129,16 @@ class UrlScrapyThreading(QThread):
         return reDic
 
     # 分析js文件，传入一个网站域名，当前js文件地址，以及js文件的源码，返回一个链接列表
-    def analysisJSPage(self, nowDomain="", nowUrl="", pageContent=""):
+    def analysisJSPage(self, nowScrawlUrl="", nowUrl="", pageContent=""):
         reList = []
         pattern = re.compile(r'(?:(?:http|https)://|["|\[|\']/).*?["|\]|\']', flags=re.I)
         startPattern = re.compile(r'^["|\'|[]', flags=re.I)
         endPattern = re.compile(r'["|\'|}]$', flags=re.I)
         httpPattern = re.compile(r'(?:http|https)://', flags=re.I)
 
+        nowScrawlDomain = myUtils.getUrlDomain(nowScrawlUrl)
         nowUrlDomain = myUtils.getUrlDomain(nowUrl)
+        nowStartDomain = myUtils.getUrlDomain(self.startUrl)
         # 提取所有符合URL格式的字符串
         reResults = pattern.findall(pageContent)
         for link in reResults:
@@ -141,17 +149,21 @@ class UrlScrapyThreading(QThread):
             if httpPattern.match(link):
                 # 链接自带协议，是完整的地址
                 # 判断是否属于爬取域名的子域名
-                if myUtils.ifSameMainDomain(nowDomain, myUtils.getUrlDomain(link)):
+                if myUtils.ifSameMainDomain(nowScrawlDomain, myUtils.getUrlDomain(link)):
                     reList.append(link)
             else:
-                # 与网站域名结合
-                reList.append(urllib.parse.urljoin(nowDomain, link))
-                # 与输入网址相结合
-                reList.append(urllib.parse.urljoin(self.scrawlUrl, link))
+                # 与当前输入网站域名结合
+                reList.append(urllib.parse.urljoin(nowScrawlDomain, link))
+                # 与当前输入网站URL结合
+                reList.append(myUtils.joinUrl(myUtils.getUrlWithoutFile(nowScrawlUrl), link))
+                # 与开始输入网站域名相结合
+                reList.append(urllib.parse.urljoin(nowStartDomain, link))
+                # 与当前输入网站URL结合
+                reList.append(myUtils.joinUrl(myUtils.getUrlWithoutFile(self.startUrl), link))
                 # 与js文件域名结合
                 reList.append(urllib.parse.urljoin(nowUrlDomain, link))
                 # 与js文件地址结合
-                reList.append(urllib.parse.urljoin(nowUrl, link))
+                reList.append(myUtils.joinUrl(myUtils.getUrlWithoutFile(nowUrl), link))
 
         # 去重
         reList = list(set(reList))

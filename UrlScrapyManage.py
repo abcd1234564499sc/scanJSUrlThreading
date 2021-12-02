@@ -35,7 +35,7 @@ class UrlScrapyManage(QThread):
 
         # 将启动URL加入队列
         for scrawlUrl in self.scrawlUrlArr:
-            self.urlQueue.put(scrawlUrl)
+            self.urlQueue.put((scrawlUrl,scrawlUrl))
             self.vistedLinkList.append(scrawlUrl)
 
         # 创建一个候选线程队列
@@ -44,8 +44,10 @@ class UrlScrapyManage(QThread):
         while (not self.urlQueue.empty()) or (not scrapyWaitQueue.empty()) or len(self.threadPool) != 0:
             # 将url队列中所有URL取出并创建线程，加入候选线程队列
             while not self.urlQueue.empty():
-                nowUrl = self.urlQueue.get()
-                nowScrapyThread = self.createThreadObj(nowUrl, self.sensiveKeyList)
+                nowItem = self.urlQueue.get()
+                nowUrl = nowItem[0]
+                nowStartUrl = nowItem[1]
+                nowScrapyThread = self.createThreadObj(nowUrl, self.sensiveKeyList, startUrl=nowStartUrl)
                 scrapyWaitQueue.put(nowScrapyThread)
 
             # 遍历线程池，将已经完成的线程移除
@@ -78,8 +80,8 @@ class UrlScrapyManage(QThread):
         self.signal_log[str, str].emit("扫描结束", "blue")
         self.signal_end.emit(True)
 
-    def createThreadObj(self, scrawlUrl="", sensiveKeyList=[]):
-        threadObj = UrlScrapyThreading(scrawlUrl, sensiveKeyList)
+    def createThreadObj(self, scrawlUrl="", sensiveKeyList=[], startUrl=""):
+        threadObj = UrlScrapyThreading(scrawlUrl, sensiveKeyList,startUrl=startUrl)
         threadObj.signal_end.connect(self.solveThreadResult)
         return threadObj
 
@@ -90,10 +92,12 @@ class UrlScrapyManage(QThread):
             reLinkList = reDic.pop("linkList")
             reSensiveList = reDic.pop("sensiveInfoList")
             # 写入新的链接
-            for tempLink in reLinkList:
+            for tempLinkItem in reLinkList:
+                tempLink = tempLinkItem[0]
+                tempStartLink = tempLinkItem[1]
                 if tempLink not in self.vistedLinkList:
                     self.vistedLinkList.append(tempLink)
-                    self.urlQueue.put(tempLink)
+                    self.urlQueue.put((tempLink,tempStartLink))
                 else:
                     pass
             # 显示结果

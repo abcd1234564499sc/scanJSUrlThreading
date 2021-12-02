@@ -156,7 +156,7 @@ class Main(QWidget, Ui_Main_Form):
         self.pushButton.setEnabled(False)
         self.pushButton_2.setEnabled(True)
 
-        self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount)
+        self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount,sensiveKeyList=self.confDic["sensiveKeyList"])
 
         try:
             self.urlScrapy.start()
@@ -164,13 +164,15 @@ class Main(QWidget, Ui_Main_Form):
             self.writeLog(ex, color="red")
 
     def exportResult(self):
-        nowCount = self.tableWidget.rowCount()
-        if nowCount == 0:
+        nowUrlResultCount = self.tableWidget.rowCount()
+        nowSensiveResultCount = self.tableWidget_2.rowCount()
+        if nowUrlResultCount == 0 and nowSensiveResultCount == 0:
             self.writeLog("当前无可导出数据", color="red")
             return
         filename = "导出文件-" + myUtils.getNowSeconed().replace("-", "").replace(" ", "").replace(":", "")
         # 创建一个excell文件对象
         wb = oxl.Workbook()
+        # 创建URL扫描结果子表
         ws = wb.active
         ws.title = "URL扫描结果"
         # 创建表头
@@ -178,7 +180,7 @@ class Main(QWidget, Ui_Main_Form):
         myUtils.writeExcellHead(ws, headArr)
 
         # 遍历当前结果
-        for rowIndex in range(nowCount):
+        for rowIndex in range(nowUrlResultCount):
             # 获取当前行的值
             nowUrl = self.tableWidget.item(rowIndex, 0).text()
             nowStatus = self.tableWidget.item(rowIndex, 1).text()
@@ -197,6 +199,30 @@ class Main(QWidget, Ui_Main_Form):
 
         # 设置列宽
         colWidthArr = [7, 70, 7, 60, 10, 10]
+        myUtils.setExcellColWidth(ws, colWidthArr)
+
+        # 创建敏感信息扫描结果子表
+        ws = wb.create_sheet("敏感信息扫描结果",1)
+        # 创建表头
+        headArr = ["序号", "URL", "关键词", "敏感信息"]
+        myUtils.writeExcellHead(ws, headArr)
+
+        # 遍历当前结果
+        for rowIndex in range(nowSensiveResultCount):
+            # 获取当前行的值
+            nowUrl = self.tableWidget_2.item(rowIndex, 0).text()
+            nowKey = self.tableWidget_2.item(rowIndex, 1).text()
+            nowSensiveVal = self.tableWidget_2.item(rowIndex, 2).text()
+
+            # 将值写入excell对象
+            myUtils.writeExcellCell(ws, rowIndex + 2, 1, rowIndex + 1, 0, True)
+            myUtils.writeExcellCell(ws, rowIndex + 2, 2, nowUrl, 0, False, hyperLink=nowUrl)
+            myUtils.writeExcellCell(ws, rowIndex + 2, 3, nowKey, 0, True)
+            myUtils.writeExcellCell(ws, rowIndex + 2, 4, nowSensiveVal, 0, False)
+            myUtils.writeExcellSpaceCell(ws, rowIndex + 2, 5)
+
+        # 设置列宽
+        colWidthArr = [7, 70, 7, 60]
         myUtils.setExcellColWidth(ws, colWidthArr)
 
         # 保存文件

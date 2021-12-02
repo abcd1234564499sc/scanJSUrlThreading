@@ -91,6 +91,18 @@ def getUrlDomain(url):
     domain = urllib.parse.urlunsplit(tuple(list(urlObj[:2]) + [""] * 3))
     return domain
 
+# 从URL中提取协议+域名+path部分
+def getUrlWithoutFile(url):
+    urlObj = urllib.parse.urlsplit(url)
+    domain = urllib.parse.urlunsplit(tuple(list(urlObj[:3]) + [""] * 2))
+    domainList = domain.split("/")
+    if "." in domainList[-1]:
+        domainList = domainList[:-1]
+    else:
+        pass
+    domain = "/".join(domainList)
+    return domain
+
 
 # 判断两个域名是否属于同一主域名，如果两者都是IP则比较是否完全相同，
 # 返回一个布尔值,属于返回True,否则返回False
@@ -313,3 +325,14 @@ def readConfFile(filePath):
     confDic["confHeader"] = headerList
 
     return confDic
+
+def joinUrl(mainUrl, link):
+    completeUrl = ""
+    if mainUrl[-1]=="/":
+        mainUrl = mainUrl[:-1]
+    else:
+        if link[0]!="/":
+            link = "/" + link
+    completeUrl = mainUrl+link
+    return completeUrl
+
