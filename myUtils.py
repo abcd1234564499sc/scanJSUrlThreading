@@ -3,6 +3,7 @@
 import datetime
 import json
 import os
+import random
 import re
 import urllib.parse
 
@@ -91,8 +92,9 @@ def getUrlDomain(url):
         urlObj = urllib.parse.urlsplit(url)
         domain = urllib.parse.urlunsplit(tuple(list(urlObj[:2]) + [""] * 3))
     except:
-        domain = "0.0.0.0"
+        domain = "0.0.0." + random.randint(0, 254)
     return domain
+
 
 # 从URL中提取协议+域名+path部分
 def getUrlWithoutFile(url):
@@ -329,13 +331,13 @@ def readConfFile(filePath):
 
     return confDic
 
+
 def joinUrl(mainUrl, link):
     completeUrl = ""
-    if mainUrl[-1]=="/":
+    if mainUrl[-1] == "/":
         mainUrl = mainUrl[:-1]
     else:
-        if link[0]!="/":
+        if link[0] != "/":
             link = "/" + link
-    completeUrl = mainUrl+link
+    completeUrl = mainUrl + link
     return completeUrl
-

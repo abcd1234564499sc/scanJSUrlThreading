@@ -58,7 +58,7 @@ class UrlScrapyThreading(QThread):
                 # 是js文件，使用js文件分析方法分析
                 tempLinkList = self.analysisJSPage(self.scrawlUrl, url, content)
                 for tempLink in tempLinkList:
-                    reLinkList.append((tempLink,self.startUrl))
+                    reLinkList.append((tempLink, self.startUrl))
             else:  # if urlSuffix == "js":
                 # 不是js文件，按HTML文件分析方法分析
                 reHtmlDic = self.analysisHtmlPage(pageUrl=tempDic["url"], pageContent=content)
@@ -66,8 +66,7 @@ class UrlScrapyThreading(QThread):
                 reJsList = reHtmlDic["js"]
                 tempLinkList = reAList + reJsList
                 for tempLink in tempLinkList:
-                    reLinkList.append((tempLink,self.startUrl))
-
+                    reLinkList.append((tempLink, self.startUrl))
 
             # 分析敏感信息
             sensiveInfoList = self.analysisSensiveInfo(url, content)
@@ -80,6 +79,7 @@ class UrlScrapyThreading(QThread):
             reDic["contentLength"] = len(content)
             reDic["linkList"] = reLinkList
             reDic["sensiveInfoList"] = sensiveInfoList
+            reDic["urlType"] = urlSuffix if urlSuffix != "" else "html"
             reDicStr = json.dumps(reDic)
         else:  # if reDic["checkFlag"]
             pass

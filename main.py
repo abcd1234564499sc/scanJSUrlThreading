@@ -22,12 +22,12 @@ class Main(QWidget, Ui_Main_Form):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.tableWidget.setColumnCount(5)
-        self.tableWidget.setHorizontalHeaderLabels(["URL", "响应码", "标题", "包长度"])
+        self.tableWidget.setColumnCount(6)
+        self.tableWidget.setHorizontalHeaderLabels(["URL", "响应码", "标题", "包长度", "URL类型"])
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableWidget.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
         self.tableWidget.setColumnWidth(1, 60)
-        self.tableWidget.hideColumn(4)
+        self.tableWidget.hideColumn(5)
         self.tableWidget_2.setColumnCount(3)
         self.tableWidget_2.setHorizontalHeaderLabels(["URL", "关键词", "敏感信息"])
         self.tableWidget_2.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -156,7 +156,7 @@ class Main(QWidget, Ui_Main_Form):
         self.pushButton.setEnabled(False)
         self.pushButton_2.setEnabled(True)
 
-        self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount,sensiveKeyList=self.confDic["sensiveKeyList"])
+        self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount, sensiveKeyList=self.confDic["sensiveKeyList"])
 
         try:
             self.urlScrapy.start()
@@ -176,7 +176,7 @@ class Main(QWidget, Ui_Main_Form):
         ws = wb.active
         ws.title = "URL扫描结果"
         # 创建表头
-        headArr = ["序号", "URL", "响应码", "标题", "包长度", "状态"]
+        headArr = ["序号", "URL", "响应码", "URL类型", "标题", "包长度", "状态"]
         myUtils.writeExcellHead(ws, headArr)
 
         # 遍历当前结果
@@ -186,23 +186,25 @@ class Main(QWidget, Ui_Main_Form):
             nowStatus = self.tableWidget.item(rowIndex, 1).text()
             nowTitle = self.tableWidget.item(rowIndex, 2).text()
             nowContentLength = self.tableWidget.item(rowIndex, 3).text()
-            nowState = "被过滤" if int(self.tableWidget.item(rowIndex, 4).text()) == 0 else "正常"
+            nowUrlType = self.tableWidget.item(rowIndex, 4).text()
+            nowState = "被过滤" if int(self.tableWidget.item(rowIndex, 5).text()) == 0 else "正常"
 
             # 将值写入excell对象
             myUtils.writeExcellCell(ws, rowIndex + 2, 1, rowIndex + 1, 0, True)
             myUtils.writeExcellCell(ws, rowIndex + 2, 2, nowUrl, 0, False, hyperLink=nowUrl)
             myUtils.writeExcellCell(ws, rowIndex + 2, 3, nowStatus, 0, True)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 4, nowTitle, 0, False)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 5, nowContentLength, 0, False)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 6, nowState, 0, True)
-            myUtils.writeExcellSpaceCell(ws, rowIndex + 2, 7)
+            myUtils.writeExcellCell(ws, rowIndex + 2, 4, nowUrlType, 0, True)
+            myUtils.writeExcellCell(ws, rowIndex + 2, 5, nowTitle, 0, False)
+            myUtils.writeExcellCell(ws, rowIndex + 2, 6, nowContentLength, 0, False)
+            myUtils.writeExcellCell(ws, rowIndex + 2, 7, nowState, 0, True)
+            myUtils.writeExcellSpaceCell(ws, rowIndex + 2, 8)
 
         # 设置列宽
-        colWidthArr = [7, 70, 7, 60, 10, 10]
+        colWidthArr = [7, 70, 7, 10, 60, 10, 10]
         myUtils.setExcellColWidth(ws, colWidthArr)
 
         # 创建敏感信息扫描结果子表
-        ws = wb.create_sheet("敏感信息扫描结果",1)
+        ws = wb.create_sheet("敏感信息扫描结果", 1)
         # 创建表头
         headArr = ["序号", "URL", "关键词", "敏感信息"]
         myUtils.writeExcellHead(ws, headArr)
@@ -262,6 +264,7 @@ class Main(QWidget, Ui_Main_Form):
                 tempItem.setText(str(resultDic[tempKey]))
             else:
                 tempItem.setData(Qt.DisplayRole, int(resultDic[tempKey]))
+
             if ifFilter:
                 tempItem.setBackground(QBrush(QColor(136, 136, 136)))
             else:
@@ -274,7 +277,7 @@ class Main(QWidget, Ui_Main_Form):
             self.tableWidget.setRowHidden(nowRowCount, ifHidden)
         else:
             tempItem.setText("1")
-        self.tableWidget.setItem(nowRowCount, 4, tempItem)
+        self.tableWidget.setItem(nowRowCount, 5, tempItem)
 
     # 判断请求结果是否要过滤，传入一个结果字典和判断条件列表，返回一个布尔值，若过滤则返回True，否则返回False
     def ifResultFilter(self, resultDic, filterConditonList):
@@ -331,7 +334,7 @@ class Main(QWidget, Ui_Main_Form):
             # 不显示过滤结果
             ifHidden = True
         for index in range(nowTableRowCount):
-            nowState = int(self.tableWidget.item(index, 4).text())
+            nowState = int(self.tableWidget.item(index, 5).text())
             if nowState == 0:
                 self.tableWidget.setRowHidden(index, ifHidden)
             else:
