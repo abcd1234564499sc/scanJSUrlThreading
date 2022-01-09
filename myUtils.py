@@ -87,8 +87,11 @@ def ifIp(matchStr):
 
 # 从URL中提取协议+域名部分
 def getUrlDomain(url):
-    urlObj = urllib.parse.urlsplit(url)
-    domain = urllib.parse.urlunsplit(tuple(list(urlObj[:2]) + [""] * 3))
+    try:
+        urlObj = urllib.parse.urlsplit(url)
+        domain = urllib.parse.urlunsplit(tuple(list(urlObj[:2]) + [""] * 3))
+    except:
+        domain = "0.0.0.0"
     return domain
 
 # 从URL中提取协议+域名+path部分
