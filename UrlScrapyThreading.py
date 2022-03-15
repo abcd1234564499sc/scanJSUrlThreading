@@ -13,11 +13,12 @@ import myUtils
 class UrlScrapyThreading(QThread):
     signal_end = pyqtSignal(str)
 
-    def __init__(self, scrawlUrl, sensiveKeyList=[], startUrl="", parent=None):
+    def __init__(self, scrawlUrl, sensiveKeyList=[], startUrl="", parent=None, extraUrlArr=[]):
         super(UrlScrapyThreading, self).__init__(parent)
         self.scrawlUrl = scrawlUrl
         self.sensiveKeyList = sensiveKeyList
         self.startUrl = startUrl
+        self.extraUrlArr = extraUrlArr
 
     def run(self):
         reDicStr = self.scrapyProcess(self.scrawlUrl)
@@ -56,7 +57,7 @@ class UrlScrapyThreading(QThread):
             reLinkList = []
             if urlSuffix == "js":
                 # 是js文件，使用js文件分析方法分析
-                tempLinkList = self.analysisJSPage(self.scrawlUrl, url, content)
+                tempLinkList = self.analysisJSPage(self.scrawlUrl, url, content, extraUrlArr=self.extraUrlArr)
                 for tempLink in tempLinkList:
                     reLinkList.append((tempLink, self.startUrl))
             else:  # if urlSuffix == "js":
@@ -128,8 +129,8 @@ class UrlScrapyThreading(QThread):
         reDic["js"] = jsLinkList
         return reDic
 
-    # 分析js文件，传入一个网站域名，当前js文件地址，以及js文件的源码，返回一个链接列表
-    def analysisJSPage(self, nowScrawlUrl="", nowUrl="", pageContent=""):
+    # 分析js文件，传入一个网站域名，当前js文件地址，以及js文件的源码，需要额外拼接的URL列表，返回一个链接列表
+    def analysisJSPage(self, nowScrawlUrl="", nowUrl="", pageContent="", extraUrlArr=[]):
         reList = []
         pattern = re.compile(r'(?:(?:http|https)://|["|\[|\']/).*?["|\]|\']', flags=re.I)
         startPattern = re.compile(r'^["|\'|[]', flags=re.I)
@@ -164,6 +165,10 @@ class UrlScrapyThreading(QThread):
                 reList.append(urllib.parse.urljoin(nowUrlDomain, link))
                 # 与js文件地址结合
                 reList.append(myUtils.joinUrl(myUtils.getUrlWithoutFile(nowUrl), link))
+                # 与额外传入的URL地址结合
+                for nowExtraUrl in extraUrlArr:
+                    reList.append(urllib.parse.urljoin(nowExtraUrl, link))
+                    reList.append(myUtils.joinUrl(nowExtraUrl, link))
 
         # 去重
         reList = list(set(reList))

@@ -79,9 +79,9 @@ class Main(QWidget, Ui_Main_Form):
                      "confHeaderList": headerList}
         return reConfDic
 
-    def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[]):
+    def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], extraUrlArr=[]):
         urlScrapy = UrlScrapyManage(scrawlUrlArr=scrawlUrlArr, maxThreadCount=maxThreadCount,
-                                    sensiveKeyList=sensiveKeyList)
+                                    sensiveKeyList=sensiveKeyList, extraUrlArr=extraUrlArr)
         urlScrapy.signal_log[str].connect(self.writeLog)
         urlScrapy.signal_log[str, str].connect(self.writeLog)
         urlScrapy.signal_url_result.connect(self.writeUrlResult)
@@ -142,6 +142,7 @@ class Main(QWidget, Ui_Main_Form):
         maxThreadCount = self.confDic["maxThreadCount"]
         # 获取初始URL
         nowUrlArr = [a for a in self.plainTextEdit.toPlainText().split("\n") if a != ""]
+        nowExtraUrlArr = [a for a in self.extraUrlTextEdit.toPlainText().split("\n") if a != ""]
         if len(nowUrlArr) == 0:
             self.writeLog("请输入需要扫描的URL", color="red")
             return
@@ -150,13 +151,19 @@ class Main(QWidget, Ui_Main_Form):
             if nowUrl == "" or not self.urlRegex.match(nowUrl):
                 self.writeLog("输入的第{0}行URL格式不正确，请输入正确格式的URL".format(index + 1), color="red")
                 return
+        for index, nowUrl in enumerate(nowExtraUrlArr):
+            if nowUrl == "" or not self.urlRegex.match(nowUrl):
+                self.writeLog("输入的第{0}行额外URL格式不正确，请输入正确格式的URL".format(index + 1), color="red")
+                return
         # 清空结果区域
         self.clearTable()
+        self.clearTableSen()
         # 设置按钮状态
         self.pushButton.setEnabled(False)
         self.pushButton_2.setEnabled(True)
 
-        self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount, sensiveKeyList=self.confDic["sensiveKeyList"])
+        self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount, sensiveKeyList=self.confDic["sensiveKeyList"],
+                                             extraUrlArr=nowExtraUrlArr)
 
         try:
             self.urlScrapy.start()
@@ -235,6 +242,10 @@ class Main(QWidget, Ui_Main_Form):
     def clearTable(self):
         while self.tableWidget.rowCount() != 0:
             self.tableWidget.removeRow(self.tableWidget.rowCount() - 1)
+
+    def clearTableSen(self):
+        while self.tableWidget_2.rowCount() != 0:
+            self.tableWidget_2.removeRow(self.tableWidget_2.rowCount() - 1)
 
     def terminateCrawl(self, ifAuto=False):
         self.pushButton.setEnabled(True)

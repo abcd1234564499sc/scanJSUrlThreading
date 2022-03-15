@@ -47,7 +47,7 @@ def requestsUrl(url, cookie={}, data={}, type=0, reqTimeout=5, readTimeout=5):
             response = requests.post(url, headers=header, verify=False, cookies=cookie, data=data,
                                      timeout=timeout)
         status = response.status_code
-        if str(status)[0] == "2" or str(status)[0] == "3":
+        if str(status)[0] != "4":
             # 获得页面编码
             pageEncoding = response.apparent_encoding
             # 设置页面编码
@@ -144,7 +144,11 @@ def ifSameMainDomain(domain1, domain2):
 def getUrlFileSuffix(url):
     reSuffix = ""
     urlObj = urllib.parse.urlparse(url)
-    reSuffix = urlObj[2].split("/")[-1].split(".")[-1]
+    suffixContent = urlObj[2].split("/")[-1]
+    if "." in suffixContent:
+        reSuffix = suffixContent.split(".")[-1]
+    else:
+        reSuffix = ""
     return reSuffix
 
 
