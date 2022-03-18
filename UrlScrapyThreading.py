@@ -147,6 +147,7 @@ class UrlScrapyThreading(QThread):
             link = startPattern.sub("", link)
             # 替换结束的引号
             link = endPattern.sub("", link)
+            link = urllib.parse.quote(link, safe='/', encoding="utf-8", errors=None)
             if httpPattern.match(link):
                 # 链接自带协议，是完整的地址
                 # 判断是否属于爬取域名的子域名
