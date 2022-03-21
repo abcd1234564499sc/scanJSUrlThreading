@@ -13,12 +13,13 @@ import myUtils
 class UrlScrapyThreading(QThread):
     signal_end = pyqtSignal(str)
 
-    def __init__(self, scrawlUrl, sensiveKeyList=[], startUrl="", parent=None, extraUrlArr=[]):
+    def __init__(self, scrawlUrl, sensiveKeyList=[], startUrl="", parent=None, extraUrlArr=[], nowCookie=""):
         super(UrlScrapyThreading, self).__init__(parent)
         self.scrawlUrl = scrawlUrl
         self.sensiveKeyList = sensiveKeyList
         self.startUrl = startUrl
         self.extraUrlArr = extraUrlArr
+        self.nowCookie = nowCookie
 
     def run(self):
         reDicStr = self.scrapyProcess(self.scrawlUrl)
@@ -45,7 +46,7 @@ class UrlScrapyThreading(QThread):
 
         # 请求这个URL
         try:
-            tempDic = myUtils.requestsUrl(url)
+            tempDic = myUtils.requestsUrl(url, cookie={} if self.nowCookie == "" else self.nowCookie)
         except Exception as ex:
             raise
 
@@ -132,7 +133,8 @@ class UrlScrapyThreading(QThread):
     # 分析js文件，传入一个网站域名，当前js文件地址，以及js文件的源码，需要额外拼接的URL列表，返回一个链接列表
     def analysisJSPage(self, nowScrawlUrl="", nowUrl="", pageContent="", extraUrlArr=[]):
         reList = []
-        pattern = re.compile(r'(?:(?:http|https)://|["|\[|\']/).*?["|\]|\']', flags=re.I)
+        # pattern = re.compile(r'(?:(?:http|https)://|["|\[|\']/).*?["|\]|\']', flags=re.I)
+        pattern = re.compile(r'(?:(?:http|https)://|["|\[|\'][a-zA-Z0-9\.]*/).*?["|\]|\']', flags=re.I)
         startPattern = re.compile(r'^["|\'|[]', flags=re.I)
         endPattern = re.compile(r'["|\'|}]$', flags=re.I)
         httpPattern = re.compile(r'(?:http|https)://', flags=re.I)
@@ -147,13 +149,16 @@ class UrlScrapyThreading(QThread):
             link = startPattern.sub("", link)
             # 替换结束的引号
             link = endPattern.sub("", link)
-            link = urllib.parse.quote(link, safe='/', encoding="utf-8", errors=None)
+            # 替换换行符
+            link = link.replace("\r\n", "\n").replace("\n", "")
             if httpPattern.match(link):
                 # 链接自带协议，是完整的地址
                 # 判断是否属于爬取域名的子域名
                 if myUtils.ifSameMainDomain(nowScrawlDomain, myUtils.getUrlDomain(link)):
                     reList.append(link)
             else:
+                link = urllib.parse.unquote(link, encoding="utf-8", errors=None)
+                link = urllib.parse.quote(link, safe='/', encoding="utf-8", errors=None)
                 # 与当前输入网站域名结合
                 reList.append(urllib.parse.urljoin(nowScrawlDomain, link))
                 # 与当前输入网站URL结合

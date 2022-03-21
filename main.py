@@ -79,9 +79,9 @@ class Main(QWidget, Ui_Main_Form):
                      "confHeaderList": headerList}
         return reConfDic
 
-    def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], extraUrlArr=[]):
+    def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], extraUrlArr=[], nowCookie=""):
         urlScrapy = UrlScrapyManage(scrawlUrlArr=scrawlUrlArr, maxThreadCount=maxThreadCount,
-                                    sensiveKeyList=sensiveKeyList, extraUrlArr=extraUrlArr)
+                                    sensiveKeyList=sensiveKeyList, extraUrlArr=extraUrlArr, nowCookie=nowCookie)
         urlScrapy.signal_log[str].connect(self.writeLog)
         urlScrapy.signal_log[str, str].connect(self.writeLog)
         urlScrapy.signal_url_result.connect(self.writeUrlResult)
@@ -155,6 +155,24 @@ class Main(QWidget, Ui_Main_Form):
             if nowUrl == "" or not self.urlRegex.match(nowUrl):
                 self.writeLog("输入的第{0}行额外URL格式不正确，请输入正确格式的URL".format(index + 1), color="red")
                 return
+        # 读取cookie
+        nowCookie = self.cookiesTextEdit.toPlainText()
+        nowCookie = nowCookie.strip(" ")
+        nowCookieDic = {}
+        if nowCookie != "":
+            # 只取第一行
+            nowCookie = nowCookie.split("\n")[0]
+            tmpList = nowCookie.split(";")
+            for tmpItem in tmpList:
+                if tmpItem != "":
+                    tmpItemList = tmpItem.split("=")
+                    nowCookieDic[tmpItemList[0]] = "=".join(tmpItemList[1:])
+                else:
+                    continue
+
+        else:
+            pass
+
         # 清空结果区域
         self.clearTable()
         self.clearTableSen()
@@ -163,7 +181,7 @@ class Main(QWidget, Ui_Main_Form):
         self.pushButton_2.setEnabled(True)
 
         self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount, sensiveKeyList=self.confDic["sensiveKeyList"],
-                                             extraUrlArr=nowExtraUrlArr)
+                                             extraUrlArr=nowExtraUrlArr, nowCookie=nowCookieDic)
 
         try:
             self.urlScrapy.start()

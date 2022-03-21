@@ -16,7 +16,8 @@ class UrlScrapyManage(QThread):
     signal_progress = pyqtSignal(str, str, str)
     signal_end = pyqtSignal(bool)
 
-    def __init__(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], parent=None, extraUrlArr=[]):
+    def __init__(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], parent=None, extraUrlArr=[],
+                 nowCookie=""):
         super(UrlScrapyManage, self).__init__(parent)
         self.scrawlUrlArr = scrawlUrlArr
         self.scrawlUrl = ""
@@ -28,6 +29,7 @@ class UrlScrapyManage(QThread):
         self.threadPool = []
         self.sensiveKeyList = sensiveKeyList
         self.extraUrlArr = extraUrlArr
+        self.nowCookie = nowCookie
 
     def run(self):
         self.signal_log[str, str].emit("扫描开始", "blue")
@@ -49,7 +51,7 @@ class UrlScrapyManage(QThread):
                 nowUrl = nowItem[0]
                 nowStartUrl = nowItem[1]
                 nowScrapyThread = self.createThreadObj(nowUrl, self.sensiveKeyList, startUrl=nowStartUrl,
-                                                       extraUrlArr=self.extraUrlArr)
+                                                       extraUrlArr=self.extraUrlArr, nowCookie=self.nowCookie)
                 scrapyWaitQueue.put(nowScrapyThread)
 
             # 遍历线程池，将已经完成的线程移除
@@ -82,8 +84,9 @@ class UrlScrapyManage(QThread):
         self.signal_log[str, str].emit("扫描结束", "blue")
         self.signal_end.emit(True)
 
-    def createThreadObj(self, scrawlUrl="", sensiveKeyList=[], startUrl="", extraUrlArr=[]):
-        threadObj = UrlScrapyThreading(scrawlUrl, sensiveKeyList, startUrl=startUrl, extraUrlArr=extraUrlArr)
+    def createThreadObj(self, scrawlUrl="", sensiveKeyList=[], startUrl="", extraUrlArr=[], nowCookie=""):
+        threadObj = UrlScrapyThreading(scrawlUrl, sensiveKeyList, startUrl=startUrl, extraUrlArr=extraUrlArr,
+                                       nowCookie=nowCookie)
         threadObj.signal_end.connect(self.solveThreadResult)
         return threadObj
 
