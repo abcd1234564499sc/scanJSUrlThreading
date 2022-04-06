@@ -15,4 +15,10 @@
 (5) 当前输入的额外URL   
 结合方式是urllib.parse.join()函数，将生成的地址去重后加入爬虫列表   
 5、爬虫对于其他文件（html、jsp等网页文件），使用requests库访问，若访问成功则记录响应码和标题，并显示在图形界面   
-配置界面可以设置最大线程、代理、敏感信息关键词以及对扫描结果的过滤
+   
+扫描地址用于发起扫描，额外地址不会参加扫描，但会参与到URL结合过程中，参考上述过程4   
+配置界面可以设置最大线程、代理、敏感信息关键词以及对扫描结果的过滤   
+界面截图如下：   
+![主界面](https://github.com/abcd1234564499sc/scanJSUrlThreading/blob/main/img/main.jpg "主界面")    
+   
+![配置界面](https://github.com/abcd1234564499sc/scanJSUrlThreading/blob/main/img/conf.jpg "配置界面")
