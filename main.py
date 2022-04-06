@@ -42,7 +42,7 @@ class Main(QWidget, Ui_Main_Form):
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         self.urlScrapy = None
         self.confFileName = "扫描器配置.conf"
-        self.confHeadList = ["最大线程数", "敏感信息关键词列表", "过滤信息列表", "是否使用代理", "代理IP", "代理端口"]
+        self.confHeadList = ["最大线程数", "敏感信息关键词列表", "过滤信息列表", "是否使用代理", "代理IP", "代理端口", "代理是否使用HTTPS"]
         warnings.filterwarnings("ignore")
         self.confDic = self.initConfFile()
         self.confWindow = ConfWindow(self.confDic)
@@ -63,13 +63,14 @@ class Main(QWidget, Ui_Main_Form):
         defaultSensiveKeyList = ["默认密码", "默认账号", "默认用户名", "default username", "default password"]
         defaultFilterList = []
         defaultIfProxy = 0
+        defaultIfProxyHttps = 0
         defaultProxyIp = ""
         defaultProxyPort = ""
         defaultConfHeaderList = self.confHeadList
         confDic = {defaultConfHeaderList[0]: defaultMaxThreadCount, defaultConfHeaderList[1]: defaultSensiveKeyList,
                    defaultConfHeaderList[2]: defaultFilterList, defaultConfHeaderList[3]: defaultIfProxy,
                    defaultConfHeaderList[4]: defaultProxyIp, defaultConfHeaderList[5]: defaultProxyPort,
-                   "confHeader": defaultConfHeaderList}
+                   defaultConfHeaderList[6]: defaultIfProxyHttps, "confHeader": defaultConfHeaderList}
 
         # 判断是否存在配置文件
         confFilePath = os.path.join(os.getcwd(), self.confFileName)
@@ -82,12 +83,14 @@ class Main(QWidget, Ui_Main_Form):
         reConfDic = {"confFilePath": confFilePath, "maxThreadCount": int(confDic[headerList[0]]),
                      "sensiveKeyList": confDic[headerList[1]], "filterList": confDic[headerList[2]],
                      "confHeaderList": headerList, "ifProxy": True if int(confDic[headerList[3]]) == 1 else False,
-                     "proxyIp": confDic[headerList[4]], "proxyPort": confDic[headerList[5]]}
+                     "proxyIp": confDic[headerList[4]], "proxyPort": confDic[headerList[5]],
+                     "ifProxyUseHttps": True if int(confDic[headerList[6]]) == 1 else False}
 
         # 更新代理设置
         if reConfDic["ifProxy"]:
-            proxyStr = "{0}:{1}".format(reConfDic["proxyIp"], reConfDic["proxyPort"])
-            self.proxies = {"http": "http://{0}".format(proxyStr), "https": "https://{0}".format(proxyStr)}
+            proxyPro = "https" if reConfDic["ifProxyUseHttps"] else "http"
+            proxyStr = "{0}://{1}:{2}".format(proxyPro, reConfDic["proxyIp"], reConfDic["proxyPort"])
+            self.proxies = {"http": proxyStr, "https": proxyStr}
         else:
             self.proxies = None
 
@@ -119,7 +122,9 @@ class Main(QWidget, Ui_Main_Form):
         reConfDic = {"confFilePath": confFilePath, "maxThreadCount": int(confDic[headerList[0]]),
                      "sensiveKeyList": confDic[headerList[1]], "filterList": confDic[headerList[2]],
                      "confHeaderList": headerList, "ifProxy": True if int(confDic[headerList[3]]) == 1 else False,
-                     "proxyIp": confDic[headerList[4]], "proxyPort": confDic[headerList[5]]}
+                     "proxyIp": confDic[headerList[4]], "proxyPort": confDic[headerList[5]],
+                     "ifProxyUseHttps": True if int(confDic[headerList[6]]) == 1 else False}
+
         # 更新请求结果表格
         nowRowCount = self.tableWidget.rowCount()
         for index in range(nowRowCount):
@@ -153,8 +158,9 @@ class Main(QWidget, Ui_Main_Form):
 
         # 更新代理设置
         if reConfDic["ifProxy"]:
-            proxyStr = "{0}:{1}".format(reConfDic["proxyIp"], reConfDic["proxyPort"])
-            self.proxies = {"http": "http://{0}".format(proxyStr), "https": "https://{0}".format(proxyStr)}
+            proxyPro = "https" if reConfDic["ifProxyUseHttps"] else "http"
+            proxyStr = "{0}://{1}:{2}".format(proxyPro, reConfDic["proxyIp"], reConfDic["proxyPort"])
+            self.proxies = {"http": proxyStr, "https": proxyStr}
         else:
             self.proxies = None
 

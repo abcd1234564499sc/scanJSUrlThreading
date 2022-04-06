@@ -26,10 +26,12 @@ class ConfWindow(QDialog, Ui_Dialog):
         self.ifProxy = confDic["ifProxy"]
         self.proxyIp = confDic["proxyIp"]
         self.proxyPort = confDic["proxyPort"]
+        self.ifProxyHttps = confDic["ifProxyUseHttps"]
         # 初始化最大线程数
         self.lineEdit.setText(str(self.maxThreadCount))
         # 初始化代理
         self.proxyCheckBox.setChecked(self.ifProxy)
+        self.ifProxyHttpsCheckBox.setChecked(self.ifProxyHttps)
         self.proxyipLineEdit.setText(str(self.proxyIp))
         self.proxyPortLineEdit.setText(str(self.proxyPort))
         # 初始化敏感信息关键词列表
@@ -83,6 +85,7 @@ class ConfWindow(QDialog, Ui_Dialog):
             self.writeWarning(warningStr)
             return
         # 读取当前代理配置值
+        nowIfProxyUseHttps = False if int(self.ifProxyHttpsCheckBox.checkState()) == 0 else True
         nowProxyCheckStatus = False if int(self.proxyCheckBox.checkState()) == 0 else True
         nowProxyIp = self.proxyipLineEdit.text().strip()
         nowProxyPort = self.proxyPortLineEdit.text().strip()
@@ -128,7 +131,8 @@ class ConfWindow(QDialog, Ui_Dialog):
         # 生成字典
         confDic = {self.confHeadList[0]: nowMaxThreadCount, self.confHeadList[1]: nowSensiveKeyList,
                    self.confHeadList[2]: nowFilterList, self.confHeadList[3]: 1 if nowProxyCheckStatus else 0,
-                   self.confHeadList[4]: nowProxyIp, self.confHeadList[5]: nowProxyPort }
+                   self.confHeadList[4]: nowProxyIp, self.confHeadList[5]: nowProxyPort,
+                   self.confHeadList[6]: 1 if nowIfProxyUseHttps else 0}
 
         # 保存到配置文件
         myUtils.writeToConfFile(self.confFilePath, confDic)
@@ -196,10 +200,12 @@ class ConfWindow(QDialog, Ui_Dialog):
             self.connectProxyButton.setEnabled(False)
             self.proxyipLineEdit.setEnabled(False)
             self.proxyPortLineEdit.setEnabled(False)
+            self.ifProxyHttpsCheckBox.setEnabled(False)
         else:
             self.connectProxyButton.setEnabled(True)
             self.proxyipLineEdit.setEnabled(True)
             self.proxyPortLineEdit.setEnabled(True)
+            self.ifProxyHttpsCheckBox.setEnabled(True)
 
     def connectProxy(self):
         self.connectProxyButton.setEnabled(False)
@@ -219,11 +225,11 @@ class ConfWindow(QDialog, Ui_Dialog):
         # 测试连接
         warningStr = "正在连接代理服务器..."
         self.writeWarning(warningStr)
-        self.connectProxyThread=ConnectProxy(nowProxyIp,nowProxyPort)
+        self.connectProxyThread = ConnectProxy(nowProxyIp, nowProxyPort)
         self.connectProxyThread.signal_result.connect(self.proxyConnectResult)
         self.connectProxyThread.start()
 
-    def proxyConnectResult(self,result):
+    def proxyConnectResult(self, result):
         if result:
             warningStr = "连接成功"
             self.writeWarning(warningStr)
@@ -231,4 +237,3 @@ class ConfWindow(QDialog, Ui_Dialog):
             warningStr = "连接失败"
             self.writeWarning(warningStr)
         self.connectProxyButton.setEnabled(True)
-

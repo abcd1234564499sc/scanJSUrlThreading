@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>746</width>
-    <height>648</height>
+    <height>668</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -31,7 +31,7 @@
           <x>0</x>
           <y>0</y>
           <width>724</width>
-          <height>590</height>
+          <height>610</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
@@ -146,6 +146,33 @@
             <enum>Qt::Horizontal</enum>
            </property>
           </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <widget class="QCheckBox" name="ifProxyHttpsCheckBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>代理服务器使用https</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_5">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </item>
          <item>
           <layout class="QGridLayout" name="gridLayout">
