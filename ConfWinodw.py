@@ -5,6 +5,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QDialog, QHeaderView, QTableWidgetItem, QMessageBox, QComboBox
 
 import myUtils
+from ConnectProxy import ConnectProxy
 from ui.ui_conf import Ui_Dialog
 
 
@@ -14,16 +15,23 @@ class ConfWindow(QDialog, Ui_Dialog):
     def __init__(self, confDic):
         super().__init__()
         self.setupUi(self)
+        # 初始化后台任务对象
+        self.connectProxyThread = ConnectProxy()
         # 根据传入的参数初始化数据
         self.confFilePath = confDic["confFilePath"]
         self.maxThreadCount = confDic["maxThreadCount"]
         self.sensiveKeyList = confDic["sensiveKeyList"]
         self.filterList = confDic["filterList"]
         self.confHeadList = confDic["confHeaderList"]
-
+        self.ifProxy = confDic["ifProxy"]
+        self.proxyIp = confDic["proxyIp"]
+        self.proxyPort = confDic["proxyPort"]
         # 初始化最大线程数
         self.lineEdit.setText(str(self.maxThreadCount))
-
+        # 初始化代理
+        self.proxyCheckBox.setChecked(self.ifProxy)
+        self.proxyipLineEdit.setText(str(self.proxyIp))
+        self.proxyPortLineEdit.setText(str(self.proxyPort))
         # 初始化敏感信息关键词列表
         self.tableWidget.setColumnCount(1)
         self.tableWidget.setHorizontalHeaderLabels(["敏感信息关键词"])
@@ -74,6 +82,22 @@ class ConfWindow(QDialog, Ui_Dialog):
             warningStr = "最大线程数必须是一个正整数"
             self.writeWarning(warningStr)
             return
+        # 读取当前代理配置值
+        nowProxyCheckStatus = False if int(self.proxyCheckBox.checkState()) == 0 else True
+        nowProxyIp = self.proxyipLineEdit.text().strip()
+        nowProxyPort = self.proxyPortLineEdit.text().strip()
+        if not nowProxyCheckStatus:
+            pass
+        else:
+            # 验证输入值是否符合规则
+            if not myUtils.ifIp(nowProxyIp):
+                warningStr = "输入的代理IP不符合IP规范"
+                self.writeWarning(warningStr)
+                return
+            elif not nowProxyPort.isdigit():
+                warningStr = "输入的代理端口必须是一个正整数"
+                self.writeWarning(warningStr)
+                return
         # 读取当前敏感信息关键词
         nowSensiveKeyList = []
         nowRowCount = self.tableWidget.rowCount()
@@ -103,7 +127,8 @@ class ConfWindow(QDialog, Ui_Dialog):
 
         # 生成字典
         confDic = {self.confHeadList[0]: nowMaxThreadCount, self.confHeadList[1]: nowSensiveKeyList,
-                   self.confHeadList[2]: nowFilterList}
+                   self.confHeadList[2]: nowFilterList, self.confHeadList[3]: 1 if nowProxyCheckStatus else 0,
+                   self.confHeadList[4]: nowProxyIp, self.confHeadList[5]: nowProxyPort }
 
         # 保存到配置文件
         myUtils.writeToConfFile(self.confFilePath, confDic)
@@ -165,3 +190,45 @@ class ConfWindow(QDialog, Ui_Dialog):
 
     def writeWarning(self, warningStr):
         self.label_5.setText(warningStr)
+
+    def updateConnectButtonStatus(self, status):
+        if status == 0:
+            self.connectProxyButton.setEnabled(False)
+            self.proxyipLineEdit.setEnabled(False)
+            self.proxyPortLineEdit.setEnabled(False)
+        else:
+            self.connectProxyButton.setEnabled(True)
+            self.proxyipLineEdit.setEnabled(True)
+            self.proxyPortLineEdit.setEnabled(True)
+
+    def connectProxy(self):
+        self.connectProxyButton.setEnabled(False)
+        nowProxyIp = self.proxyipLineEdit.text().strip()
+        nowProxyPort = self.proxyPortLineEdit.text().strip()
+        # 验证输入值是否符合规则
+        if not myUtils.ifIp(nowProxyIp):
+            warningStr = "输入的代理IP不符合IP规范"
+            self.writeWarning(warningStr)
+            self.connectProxyButton.setEnabled(True)
+            return
+        elif not nowProxyPort.isdigit():
+            warningStr = "输入的代理端口必须是一个正整数"
+            self.writeWarning(warningStr)
+            self.connectProxyButton.setEnabled(True)
+            return
+        # 测试连接
+        warningStr = "正在连接代理服务器..."
+        self.writeWarning(warningStr)
+        self.connectProxyThread=ConnectProxy(nowProxyIp,nowProxyPort)
+        self.connectProxyThread.signal_result.connect(self.proxyConnectResult)
+        self.connectProxyThread.start()
+
+    def proxyConnectResult(self,result):
+        if result:
+            warningStr = "连接成功"
+            self.writeWarning(warningStr)
+        else:
+            warningStr = "连接失败"
+            self.writeWarning(warningStr)
+        self.connectProxyButton.setEnabled(True)
+

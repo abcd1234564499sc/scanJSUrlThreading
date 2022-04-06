@@ -5,6 +5,7 @@ import json
 import os
 import random
 import re
+import socket
 import urllib.parse
 
 import openpyxl as oxl
@@ -16,7 +17,7 @@ from openpyxl.styles import Border, Side, Font, PatternFill
 borderNumDic = {-1: None, 0: "thin"}
 
 
-# 访问URL,type表示请求类型，0为GET，1为POST
+# 访问URL,type表示请求类型，0为GET，1为POST，2为PUT
 # 返回值类型如下：
 # {
 # "url":传入URL,
@@ -26,28 +27,34 @@ borderNumDic = {-1: None, 0: "thin"}
 # "pageContent":访问成功时的页面源码，
 # "status":访问的响应码
 # }
-def requestsUrl(url, cookie={}, data={}, type=0, reqTimeout=5, readTimeout=5):
+def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readTimeout=10, proxies=None):
     resDic = {}
     url = url.strip()
-    header = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
-    }
 
     resultStr = ""
     checkedFlag = False
     status = ""
     title = ""
+    pageContent = ""
     reContent = ""
     timeout = (reqTimeout, readTimeout)
+    header = header if header == {} else {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+    }
 
     try:
         if type == 0:
-            response = requests.get(url, headers=header, verify=False, cookies=cookie, timeout=timeout)
+            response = requests.get(url, headers=header, verify=False, cookies=cookie, timeout=timeout, proxies=proxies)
+        elif type == 1:
+            response = requests.post(url, headers=header, verify=False, cookies=cookie, data=data, timeout=timeout,
+                                     proxies=proxies)
+        elif type == 2:
+            response = requests.put(url, headers=header, verify=False, cookies=cookie, data=data, timeout=timeout,
+                                    proxies=proxies)
         else:
-            response = requests.post(url, headers=header, verify=False, cookies=cookie, data=data,
-                                     timeout=timeout)
+            pass
         status = response.status_code
-        if str(status)[0] != "4":
+        if str(status)[0] == "2" or str(status)[0] == "3":
             # 获得页面编码
             pageEncoding = response.apparent_encoding
             # 设置页面编码
@@ -345,3 +352,15 @@ def joinUrl(mainUrl, link):
             link = "/" + link
     completeUrl = mainUrl + link
     return completeUrl
+
+
+# 测试指定IP的指定端口是否能联通
+def connectIpPort(ip, port):
+    ifConnected = False
+    socketObj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = socketObj.connect_ex((ip, port))
+    if result == 0:
+        ifConnected = True
+    else:
+        ifConnected = False
+    return ifConnected

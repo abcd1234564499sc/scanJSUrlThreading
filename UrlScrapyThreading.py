@@ -13,13 +13,15 @@ import myUtils
 class UrlScrapyThreading(QThread):
     signal_end = pyqtSignal(str)
 
-    def __init__(self, scrawlUrl, sensiveKeyList=[], startUrl="", parent=None, extraUrlArr=[], nowCookie=""):
+    def __init__(self, scrawlUrl, sensiveKeyList=[], startUrl="", parent=None, extraUrlArr=[], nowCookie="",
+                 proxies=None):
         super(UrlScrapyThreading, self).__init__(parent)
         self.scrawlUrl = scrawlUrl
         self.sensiveKeyList = sensiveKeyList
         self.startUrl = startUrl
         self.extraUrlArr = extraUrlArr
         self.nowCookie = nowCookie
+        self.proxies = proxies
 
     def run(self):
         reDicStr = self.scrapyProcess(self.scrawlUrl)
@@ -46,7 +48,8 @@ class UrlScrapyThreading(QThread):
 
         # 请求这个URL
         try:
-            tempDic = myUtils.requestsUrl(url, cookie={} if self.nowCookie == "" else self.nowCookie)
+            tempDic = myUtils.requestsUrl(url, cookie={} if self.nowCookie == "" else self.nowCookie,
+                                          proxies=self.proxies)
         except Exception as ex:
             raise
 

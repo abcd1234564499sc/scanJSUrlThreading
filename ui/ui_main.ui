@@ -17,105 +17,129 @@
    <iconset resource="../resource/source.qrc">
     <normaloff>:/图片/icon.png</normaloff>:/图片/icon.png</iconset>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,6,6,1">
+  <layout class="QVBoxLayout" name="verticalLayout_6" stretch="3,8,8,1">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_6">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <layout class="QVBoxLayout" name="verticalLayout_5" stretch="2,6">
        <item>
-        <widget class="QLabel" name="label">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>目标地址</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPlainTextEdit" name="plainTextEdit"/>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_5">
-       <item>
-        <widget class="QLabel" name="label_6">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>额外地址</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPlainTextEdit" name="extraUrlTextEdit"/>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_6" stretch="5">
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0">
+        <layout class="QHBoxLayout" name="horizontalLayout_7">
          <item>
-          <widget class="QPushButton" name="pushButton_4">
-           <property name="text">
-            <string>文件导入</string>
-           </property>
-           <property name="icon">
-            <iconset resource="../resource/source.qrc">
-             <normaloff>:/图片/打开文件.png</normaloff>:/图片/打开文件.png</iconset>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="font">
+              <font>
+               <family>Arial</family>
+               <pointsize>11</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>目标地址</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPlainTextEdit" name="plainTextEdit"/>
+           </item>
+          </layout>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
-            <widget class="QPushButton" name="pushButton">
-             <property name="text">
-              <string/>
+            <widget class="QLabel" name="label_6">
+             <property name="font">
+              <font>
+               <family>Arial</family>
+               <pointsize>11</pointsize>
+              </font>
              </property>
-             <property name="icon">
-              <iconset resource="../resource/source.qrc">
-               <normaloff>:/图片/开始.png</normaloff>:/图片/开始.png</iconset>
+             <property name="text">
+              <string>额外地址</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButton_2">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset resource="../resource/source.qrc">
-               <normaloff>:/图片/中止.png</normaloff>:/图片/中止.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_5">
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset resource="../resource/source.qrc">
-               <normaloff>:/图片/设置.png</normaloff>:/图片/设置.png</iconset>
-             </property>
-            </widget>
+            <widget class="QPlainTextEdit" name="extraUrlTextEdit"/>
            </item>
           </layout>
          </item>
         </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <item>
+          <widget class="QLabel" name="label_7">
+           <property name="font">
+            <font>
+             <family>Arial</family>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>  Cookie  </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTextEdit" name="cookiesTextEdit">
+           <property name="placeholderText">
+            <string>输入报文中的cookie字段，例：报文为：Cookie:uuid=123456; d_c0=456789,则在此处输入 uuid=123456; d_c0=456789，留空则不使用cookie</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QPushButton" name="pushButton_4">
+         <property name="text">
+          <string>文件导入</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../resource/source.qrc">
+           <normaloff>:/图片/打开文件.png</normaloff>:/图片/打开文件.png</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="text">
+          <string>开始运行</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../resource/source.qrc">
+           <normaloff>:/图片/开始.png</normaloff>:/图片/开始.png</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>中止运行</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../resource/source.qrc">
+           <normaloff>:/图片/中止.png</normaloff>:/图片/中止.png</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_5">
+         <property name="text">
+          <string>配置</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../resource/source.qrc">
+           <normaloff>:/图片/设置.png</normaloff>:/图片/设置.png</iconset>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

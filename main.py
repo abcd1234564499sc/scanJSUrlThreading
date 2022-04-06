@@ -42,7 +42,7 @@ class Main(QWidget, Ui_Main_Form):
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         self.urlScrapy = None
         self.confFileName = "扫描器配置.conf"
-        self.confHeadList = ["最大线程数", "敏感信息关键词列表", "过滤信息列表"]
+        self.confHeadList = ["最大线程数", "敏感信息关键词列表", "过滤信息列表", "是否使用代理", "代理IP", "代理端口"]
         warnings.filterwarnings("ignore")
         self.confDic = self.initConfFile()
         self.confWindow = ConfWindow(self.confDic)
@@ -62,9 +62,14 @@ class Main(QWidget, Ui_Main_Form):
         defaultMaxThreadCount = 50
         defaultSensiveKeyList = ["默认密码", "默认账号", "默认用户名", "default username", "default password"]
         defaultFilterList = []
+        defaultIfProxy = 0
+        defaultProxyIp = ""
+        defaultProxyPort = ""
         defaultConfHeaderList = self.confHeadList
         confDic = {defaultConfHeaderList[0]: defaultMaxThreadCount, defaultConfHeaderList[1]: defaultSensiveKeyList,
-                   defaultConfHeaderList[2]: defaultFilterList, "confHeader": defaultConfHeaderList}
+                   defaultConfHeaderList[2]: defaultFilterList, defaultConfHeaderList[3]: defaultIfProxy,
+                   defaultConfHeaderList[4]: defaultProxyIp, defaultConfHeaderList[5]: defaultProxyPort,
+                   "confHeader": defaultConfHeaderList}
 
         # 判断是否存在配置文件
         confFilePath = os.path.join(os.getcwd(), self.confFileName)
@@ -76,12 +81,23 @@ class Main(QWidget, Ui_Main_Form):
 
         reConfDic = {"confFilePath": confFilePath, "maxThreadCount": int(confDic[headerList[0]]),
                      "sensiveKeyList": confDic[headerList[1]], "filterList": confDic[headerList[2]],
-                     "confHeaderList": headerList}
+                     "confHeaderList": headerList, "ifProxy": True if int(confDic[headerList[3]]) == 1 else False,
+                     "proxyIp": confDic[headerList[4]], "proxyPort": confDic[headerList[5]]}
+
+        # 更新代理设置
+        if reConfDic["ifProxy"]:
+            proxyStr = "{0}:{1}".format(reConfDic["proxyIp"], reConfDic["proxyPort"])
+            self.proxies = {"http": "http://{0}".format(proxyStr), "https": "https://{0}".format(proxyStr)}
+        else:
+            self.proxies = None
+
         return reConfDic
 
-    def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], extraUrlArr=[], nowCookie=""):
+    def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], extraUrlArr=[], nowCookie="",
+                       proxies=None):
         urlScrapy = UrlScrapyManage(scrawlUrlArr=scrawlUrlArr, maxThreadCount=maxThreadCount,
-                                    sensiveKeyList=sensiveKeyList, extraUrlArr=extraUrlArr, nowCookie=nowCookie)
+                                    sensiveKeyList=sensiveKeyList, extraUrlArr=extraUrlArr, nowCookie=nowCookie,
+                                    proxies=proxies)
         urlScrapy.signal_log[str].connect(self.writeLog)
         urlScrapy.signal_log[str, str].connect(self.writeLog)
         urlScrapy.signal_url_result.connect(self.writeUrlResult)
@@ -102,7 +118,8 @@ class Main(QWidget, Ui_Main_Form):
         headerList = confDic["confHeader"]
         reConfDic = {"confFilePath": confFilePath, "maxThreadCount": int(confDic[headerList[0]]),
                      "sensiveKeyList": confDic[headerList[1]], "filterList": confDic[headerList[2]],
-                     "confHeaderList": headerList}
+                     "confHeaderList": headerList, "ifProxy": True if int(confDic[headerList[3]]) == 1 else False,
+                     "proxyIp": confDic[headerList[4]], "proxyPort": confDic[headerList[5]]}
         # 更新请求结果表格
         nowRowCount = self.tableWidget.rowCount()
         for index in range(nowRowCount):
@@ -133,6 +150,14 @@ class Main(QWidget, Ui_Main_Form):
                     self.tableWidget.item(index, colIndex).setBackground(QBrush(QColor(255, 255, 255)))
                 # 设置显示当前行
                 self.tableWidget.setRowHidden(index, False)
+
+        # 更新代理设置
+        if reConfDic["ifProxy"]:
+            proxyStr = "{0}:{1}".format(reConfDic["proxyIp"], reConfDic["proxyPort"])
+            self.proxies = {"http": "http://{0}".format(proxyStr), "https": "https://{0}".format(proxyStr)}
+        else:
+            self.proxies = None
+
         self.confDic = reConfDic
 
     def startCrawl(self):
@@ -181,7 +206,7 @@ class Main(QWidget, Ui_Main_Form):
         self.pushButton_2.setEnabled(True)
 
         self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount, sensiveKeyList=self.confDic["sensiveKeyList"],
-                                             extraUrlArr=nowExtraUrlArr, nowCookie=nowCookieDic)
+                                             extraUrlArr=nowExtraUrlArr, nowCookie=nowCookieDic, proxies=self.proxies)
 
         try:
             self.urlScrapy.start()
