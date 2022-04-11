@@ -38,7 +38,7 @@ def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readT
     pageContent = ""
     reContent = ""
     timeout = (reqTimeout, readTimeout)
-    header = header if header == {} else {
+    header = header if header != {} else {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
     }
 
@@ -234,6 +234,9 @@ def writeExcellHead(ws, headArr):
 # fgColor表示该单元格的背景颜色，为一个RGB16进制字符串，默认为“FFFFFF”（白色）
 # otherAlign表示当ifAlign为False时指定的其他对齐方式，是一个数字型变量，默认为None，当其为0时表示左对齐，1为右对齐
 def writeExcellCell(ws, row, column, value, borderNum, ifAlign, hyperLink=None, fgColor="FFFFFF", otherAlign=None):
+    value = str(value)
+    ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
+    value = ILLEGAL_CHARACTERS_RE.sub("", value)
     # 获得常用样式
     styleDic = getExcellStyleDic()
     # 获得指定单元格

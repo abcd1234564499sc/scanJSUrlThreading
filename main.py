@@ -6,7 +6,6 @@ import re
 import sys
 import warnings
 
-import openpyxl as oxl
 from PyQt5.QtCore import QDir
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextCursor, QBrush, QColor
@@ -14,6 +13,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QHeaderView, QTableWidgetItem
 
 import myUtils
 from ConfWinodw import ConfWindow
+from ExportExcellThread import ExportExcellThread
 from UrlScrapyManage import UrlScrapyManage
 from ui.ui_main import Ui_Main_Form
 
@@ -41,8 +41,9 @@ class Main(QWidget, Ui_Main_Form):
             r'(?::\d+)?'  # optional port
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         self.urlScrapy = None
+        self.exportExcellThread = None
         self.confFileName = "扫描器配置.conf"
-        self.confHeadList = ["最大线程数", "敏感信息关键词列表", "过滤信息列表", "是否使用代理", "代理IP", "代理端口", "代理是否使用HTTPS"]
+        self.confHeadList = ["最大线程数", "敏感信息关键词列表", "过滤信息列表", "是否使用代理", "代理IP", "代理端口", "代理是否使用HTTPS", "导出单次保存数据行数"]
         warnings.filterwarnings("ignore")
         self.confDic = self.initConfFile()
         self.confWindow = ConfWindow(self.confDic)
@@ -56,10 +57,15 @@ class Main(QWidget, Ui_Main_Form):
     #       过滤项：0代表标题，1代表包长度
     #       过滤条件：0代表包含，1代表不包含，2代表等于，3代表不等于
     #       过滤值,
-    # "confHeaderList":配置名列表
+    # "confHeaderList":配置名列表,
+    # "ifProxy":是否开启代理，
+    # "proxyIp":代理IP,
+    # "proxyPort":代理端口,
+    # "exportSaveCount":导出时每次保存处理的数据数
     # }
     def initConfFile(self):
         defaultMaxThreadCount = 50
+        defaultExportSaveCount = 1000
         defaultSensiveKeyList = ["默认密码", "默认账号", "默认用户名", "default username", "default password"]
         defaultFilterList = []
         defaultIfProxy = 0
@@ -70,12 +76,14 @@ class Main(QWidget, Ui_Main_Form):
         confDic = {defaultConfHeaderList[0]: defaultMaxThreadCount, defaultConfHeaderList[1]: defaultSensiveKeyList,
                    defaultConfHeaderList[2]: defaultFilterList, defaultConfHeaderList[3]: defaultIfProxy,
                    defaultConfHeaderList[4]: defaultProxyIp, defaultConfHeaderList[5]: defaultProxyPort,
-                   defaultConfHeaderList[6]: defaultIfProxyHttps, "confHeader": defaultConfHeaderList}
+                   defaultConfHeaderList[6]: defaultIfProxyHttps, defaultConfHeaderList[7]: defaultExportSaveCount,
+                   }
 
         # 判断是否存在配置文件
         confFilePath = os.path.join(os.getcwd(), self.confFileName)
         if not os.path.exists(confFilePath):
             myUtils.writeToConfFile(confFilePath, confDic)
+            confDic["confHeader"] = defaultConfHeaderList
         else:
             confDic = myUtils.readConfFile(confFilePath)
         headerList = confDic["confHeader"]
@@ -84,7 +92,8 @@ class Main(QWidget, Ui_Main_Form):
                      "sensiveKeyList": confDic[headerList[1]], "filterList": confDic[headerList[2]],
                      "confHeaderList": headerList, "ifProxy": True if int(confDic[headerList[3]]) == 1 else False,
                      "proxyIp": confDic[headerList[4]], "proxyPort": confDic[headerList[5]],
-                     "ifProxyUseHttps": True if int(confDic[headerList[6]]) == 1 else False}
+                     "ifProxyUseHttps": True if int(confDic[headerList[6]]) == 1 else False,
+                     "exportSaveCount": int(confDic[headerList[7]])}
 
         # 更新代理设置
         if reConfDic["ifProxy"]:
@@ -123,7 +132,8 @@ class Main(QWidget, Ui_Main_Form):
                      "sensiveKeyList": confDic[headerList[1]], "filterList": confDic[headerList[2]],
                      "confHeaderList": headerList, "ifProxy": True if int(confDic[headerList[3]]) == 1 else False,
                      "proxyIp": confDic[headerList[4]], "proxyPort": confDic[headerList[5]],
-                     "ifProxyUseHttps": True if int(confDic[headerList[6]]) == 1 else False}
+                     "ifProxyUseHttps": True if int(confDic[headerList[6]]) == 1 else False,
+                     "exportSaveCount": int(confDic[headerList[7]])}
 
         # 更新请求结果表格
         nowRowCount = self.tableWidget.rowCount()
@@ -220,73 +230,26 @@ class Main(QWidget, Ui_Main_Form):
             self.writeLog(ex, color="red")
 
     def exportResult(self):
+        exportSaveCount = int(self.confDic["exportSaveCount"])
         nowUrlResultCount = self.tableWidget.rowCount()
         nowSensiveResultCount = self.tableWidget_2.rowCount()
         if nowUrlResultCount == 0 and nowSensiveResultCount == 0:
             self.writeLog("当前无可导出数据", color="red")
             return
-        filename = "导出文件-" + myUtils.getNowSeconed().replace("-", "").replace(" ", "").replace(":", "")
-        # 创建一个excell文件对象
-        wb = oxl.Workbook()
-        # 创建URL扫描结果子表
-        ws = wb.active
-        ws.title = "URL扫描结果"
-        # 创建表头
-        headArr = ["序号", "URL", "响应码", "URL类型", "标题", "包长度", "状态"]
-        myUtils.writeExcellHead(ws, headArr)
 
-        # 遍历当前结果
-        for rowIndex in range(nowUrlResultCount):
-            # 获取当前行的值
-            nowUrl = self.tableWidget.item(rowIndex, 0).text()
-            nowStatus = self.tableWidget.item(rowIndex, 1).text()
-            nowTitle = self.tableWidget.item(rowIndex, 2).text()
-            nowContentLength = self.tableWidget.item(rowIndex, 3).text()
-            nowUrlType = self.tableWidget.item(rowIndex, 4).text()
-            nowState = "被过滤" if int(self.tableWidget.item(rowIndex, 5).text()) == 0 else "正常"
+        self.exportExcellThread = ExportExcellThread(self.tableWidget, self.tableWidget_2, exportSaveCount)
+        self.exportExcellThread.signal_end.connect(self.exportCompleted)
+        self.exportExcellThread.signal_log.connect(self.writeLog)
+        self.exportExcellThread.start()
+        self.writeLog("开始导出文件", color="blue")
+        self.pushButton_3.setEnabled(False)
 
-            # 将值写入excell对象
-            myUtils.writeExcellCell(ws, rowIndex + 2, 1, rowIndex + 1, 0, True)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 2, nowUrl, 0, False, hyperLink=nowUrl)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 3, nowStatus, 0, True)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 4, nowUrlType, 0, True)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 5, nowTitle, 0, False)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 6, nowContentLength, 0, False)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 7, nowState, 0, True)
-            myUtils.writeExcellSpaceCell(ws, rowIndex + 2, 8)
-
-        # 设置列宽
-        colWidthArr = [7, 70, 7, 10, 60, 10, 10]
-        myUtils.setExcellColWidth(ws, colWidthArr)
-
-        # 创建敏感信息扫描结果子表
-        ws = wb.create_sheet("敏感信息扫描结果", 1)
-        # 创建表头
-        headArr = ["序号", "URL", "关键词", "敏感信息"]
-        myUtils.writeExcellHead(ws, headArr)
-
-        # 遍历当前结果
-        for rowIndex in range(nowSensiveResultCount):
-            # 获取当前行的值
-            nowUrl = self.tableWidget_2.item(rowIndex, 0).text()
-            nowKey = self.tableWidget_2.item(rowIndex, 1).text()
-            nowSensiveVal = self.tableWidget_2.item(rowIndex, 2).text()
-
-            # 将值写入excell对象
-            myUtils.writeExcellCell(ws, rowIndex + 2, 1, rowIndex + 1, 0, True)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 2, nowUrl, 0, False, hyperLink=nowUrl)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 3, nowKey, 0, True)
-            myUtils.writeExcellCell(ws, rowIndex + 2, 4, nowSensiveVal, 0, False)
-            myUtils.writeExcellSpaceCell(ws, rowIndex + 2, 5)
-
-        # 设置列宽
-        colWidthArr = [7, 70, 7, 60]
-        myUtils.setExcellColWidth(ws, colWidthArr)
-
-        # 保存文件
-        myUtils.saveExcell(wb, saveName=filename)
-        self.writeLog("")
-        self.writeLog("成功保存文件：{0}.xlsx 至当前文件夹".format(filename), color="blue")
+    def exportCompleted(self, result, logStr):
+        if result:
+            self.writeLog(logStr, color="blue")
+        else:
+            self.writeLog(logStr, color="red")
+        self.pushButton_3.setEnabled(True)
 
     def clearTable(self):
         while self.tableWidget.rowCount() != 0:

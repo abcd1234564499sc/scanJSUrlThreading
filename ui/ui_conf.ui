@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>746</width>
-    <height>668</height>
+    <height>691</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -31,7 +31,7 @@
           <x>0</x>
           <y>0</y>
           <width>724</width>
-          <height>610</height>
+          <height>633</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
@@ -58,29 +58,47 @@
           </widget>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
            <item>
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string>最大线程数</string>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
+             <item>
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>最大线程数</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="lineEdit"/>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineEdit"/>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
+            <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,0">
+             <item>
+              <widget class="QLabel" name="label_9">
+               <property name="text">
+                <string>导出单次保存行数</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="saveCountLineEdit"/>
+             </item>
+            </layout>
            </item>
           </layout>
          </item>

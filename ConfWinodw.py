@@ -27,8 +27,10 @@ class ConfWindow(QDialog, Ui_Dialog):
         self.proxyIp = confDic["proxyIp"]
         self.proxyPort = confDic["proxyPort"]
         self.ifProxyHttps = confDic["ifProxyUseHttps"]
-        # 初始化最大线程数
+        self.exportSaveCount = confDic["exportSaveCount"]
+        # 初始化最大线程数及保存数
         self.lineEdit.setText(str(self.maxThreadCount))
+        self.saveCountLineEdit.setText(str(self.exportSaveCount))
         # 初始化代理
         self.proxyCheckBox.setChecked(self.ifProxy)
         self.ifProxyHttpsCheckBox.setChecked(self.ifProxyHttps)
@@ -79,9 +81,14 @@ class ConfWindow(QDialog, Ui_Dialog):
     def saveConf(self):
         # 读取当前配置值
         nowMaxThreadCount = self.lineEdit.text()
+        nowExportSaveCount = self.saveCountLineEdit.text()
         # 验证输入值是否符合规则
         if not nowMaxThreadCount.isdigit():
             warningStr = "最大线程数必须是一个正整数"
+            self.writeWarning(warningStr)
+            return
+        if not nowExportSaveCount.isdigit():
+            warningStr = "导出单次保存行数必须是一个正整数"
             self.writeWarning(warningStr)
             return
         # 读取当前代理配置值
@@ -132,7 +139,7 @@ class ConfWindow(QDialog, Ui_Dialog):
         confDic = {self.confHeadList[0]: nowMaxThreadCount, self.confHeadList[1]: nowSensiveKeyList,
                    self.confHeadList[2]: nowFilterList, self.confHeadList[3]: 1 if nowProxyCheckStatus else 0,
                    self.confHeadList[4]: nowProxyIp, self.confHeadList[5]: nowProxyPort,
-                   self.confHeadList[6]: 1 if nowIfProxyUseHttps else 0}
+                   self.confHeadList[6]: 1 if nowIfProxyUseHttps else 0, self.confHeadList[7]: nowExportSaveCount}
 
         # 保存到配置文件
         myUtils.writeToConfFile(self.confFilePath, confDic)
