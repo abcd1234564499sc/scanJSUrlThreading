@@ -14,7 +14,7 @@ class UrlScrapyThreading(QThread):
     signal_end = pyqtSignal(str)
 
     def __init__(self, scrawlUrl, sensiveKeyList=[], startUrl="", parent=None, extraUrlArr=[], nowCookie="",
-                 proxies=None):
+                 proxies=None, unvisitInterfaceUri=[]):
         super(UrlScrapyThreading, self).__init__(parent)
         self.scrawlUrl = scrawlUrl
         self.sensiveKeyList = sensiveKeyList
@@ -22,6 +22,7 @@ class UrlScrapyThreading(QThread):
         self.extraUrlArr = extraUrlArr
         self.nowCookie = nowCookie
         self.proxies = proxies
+        self.unvisitInterfaceUri = unvisitInterfaceUri
 
     def run(self):
         reDicStr = self.scrapyProcess(self.scrawlUrl)
@@ -61,12 +62,14 @@ class UrlScrapyThreading(QThread):
             reLinkList = []
             if urlSuffix == "js":
                 # 是js文件，使用js文件分析方法分析
-                tempLinkList = self.analysisJSPage(self.scrawlUrl, url, content, extraUrlArr=self.extraUrlArr)
+                tempLinkList = self.analysisJSPage(self.scrawlUrl, url, content, extraUrlArr=self.extraUrlArr,
+                                                   unvisitInterfaceUri=self.unvisitInterfaceUri)
                 for tempLink in tempLinkList:
                     reLinkList.append((tempLink, self.startUrl))
             else:  # if urlSuffix == "js":
                 # 不是js文件，按HTML文件分析方法分析
-                reHtmlDic = self.analysisHtmlPage(pageUrl=tempDic["url"], pageContent=content)
+                reHtmlDic = self.analysisHtmlPage(pageUrl=tempDic["url"], pageContent=content,
+                                                  unvisitInterfaceUri=self.unvisitInterfaceUri)
                 reAList = reHtmlDic["a"]
                 reJsList = reHtmlDic["js"]
                 tempLinkList = reAList + reJsList
@@ -92,7 +95,7 @@ class UrlScrapyThreading(QThread):
 
     # 分析一个Html页面，返回其中的链接以及引用的js链接，
     # 返回一个字典，字典结构为：{"a":[a标签的链接数组],"js":[js链接数组]}
-    def analysisHtmlPage(self, pageUrl="", pageContent=""):
+    def analysisHtmlPage(self, pageUrl="", pageContent="", unvisitInterfaceUri=[]):
         reDic = {}
         aLinkList = []
         jsLinkList = []
@@ -109,6 +112,18 @@ class UrlScrapyThreading(QThread):
                 # 获取链接
                 nowHref = aItem.attrs["href"]
                 nowHref = urllib.parse.urljoin(pageUrl, nowHref)
+                # 判断链接是否能够爬取
+                ifUnvisit = False
+                for tmpUri in unvisitInterfaceUri:
+                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUri,nowHref)
+                    if ifUnvisit:
+                        break
+                    else:
+                        pass
+                if ifUnvisit:
+                    continue
+                else:
+                    pass
                 # 判断是否属于爬取域名的子域名
                 if myUtils.ifSameMainDomain(nowDomain, myUtils.getUrlDomain(nowHref)):
                     aLinkList.append(nowHref)
@@ -134,7 +149,7 @@ class UrlScrapyThreading(QThread):
         return reDic
 
     # 分析js文件，传入一个网站域名，当前js文件地址，以及js文件的源码，需要额外拼接的URL列表，返回一个链接列表
-    def analysisJSPage(self, nowScrawlUrl="", nowUrl="", pageContent="", extraUrlArr=[]):
+    def analysisJSPage(self, nowScrawlUrl="", nowUrl="", pageContent="", extraUrlArr=[], unvisitInterfaceUri=[]):
         reList = []
         # pattern = re.compile(r'(?:(?:http|https)://|["|\[|\']/).*?["|\]|\']', flags=re.I)
         pattern = re.compile(r'(?:(?:http|https)://|["|\[|\'][a-zA-Z0-9\.]*/).*?["|\]|\']', flags=re.I)
@@ -162,6 +177,18 @@ class UrlScrapyThreading(QThread):
             else:
                 link = urllib.parse.unquote(link, encoding="utf-8", errors=None)
                 link = urllib.parse.quote(link, safe='/', encoding="utf-8", errors=None)
+                # 判断链接是否能够爬取
+                ifUnvisit = False
+                for tmpUri in unvisitInterfaceUri:
+                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUri, link)
+                    if ifUnvisit:
+                        break
+                    else:
+                        pass
+                if ifUnvisit:
+                    continue
+                else:
+                    pass
                 # 与当前输入网站域名结合
                 reList.append(urllib.parse.urljoin(nowScrawlDomain, link))
                 # 与当前输入网站URL结合

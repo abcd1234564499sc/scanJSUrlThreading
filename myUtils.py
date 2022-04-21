@@ -367,3 +367,13 @@ def connectIpPort(ip, port):
     else:
         ifConnected = False
     return ifConnected
+
+
+# 判断URL最后的URI是否与输入的相同
+def ifSameUri(uri, url):
+    reFlag = False
+    if uri == url[-1 * len(uri):]:
+        reFlag = True
+    else:
+        reFlag = False
+    return reFlag

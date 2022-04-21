@@ -17,59 +17,75 @@
    <iconset resource="../resource/source.qrc">
     <normaloff>:/图片/icon.png</normaloff>:/图片/icon.png</iconset>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_6" stretch="3,8,8,1">
+  <layout class="QVBoxLayout" name="verticalLayout_6" stretch="4,8,8,1">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_5" stretch="2,6">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_7">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_4">
-           <item>
-            <widget class="QLabel" name="label">
-             <property name="font">
-              <font>
-               <family>Arial</family>
-               <pointsize>11</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>目标地址</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPlainTextEdit" name="plainTextEdit"/>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_5">
-           <item>
-            <widget class="QLabel" name="label_6">
-             <property name="font">
-              <font>
-               <family>Arial</family>
-               <pointsize>11</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>额外地址</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPlainTextEdit" name="extraUrlTextEdit"/>
-           </item>
-          </layout>
-         </item>
-        </layout>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>目标地址</string>
+         </property>
+        </widget>
        </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <item row="0" column="1">
+        <widget class="QPlainTextEdit" name="plainTextEdit">
+         <property name="placeholderText">
+          <string>填写要爬取接口的地址，多个地址一行填写一个</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QLabel" name="label_6">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>额外地址</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3">
+        <widget class="QPlainTextEdit" name="extraUrlTextEdit">
+         <property name="placeholderText">
+          <string>填写需要与找到接口进行拼接的其他地址，该地址不会爬取其中的接口，但会将其与目的地址中爬取到的接口进行拼接后请求</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>  Cookie  </string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QTextEdit" name="cookiesTextEdit">
+         <property name="placeholderText">
+          <string>输入报文中的cookie字段，例：报文为：Cookie:uuid=123456; d_c0=456789,则在此处输入 uuid=123456; d_c0=456789，留空则不使用cookie</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <layout class="QVBoxLayout" name="verticalLayout_5">
          <item>
-          <widget class="QLabel" name="label_7">
+          <widget class="QLabel" name="label_8">
            <property name="font">
             <font>
              <family>Arial</family>
@@ -77,18 +93,18 @@
             </font>
            </property>
            <property name="text">
-            <string>  Cookie  </string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTextEdit" name="cookiesTextEdit">
-           <property name="placeholderText">
-            <string>输入报文中的cookie字段，例：报文为：Cookie:uuid=123456; d_c0=456789,则在此处输入 uuid=123456; d_c0=456789，留空则不使用cookie</string>
+            <string>不访问接口</string>
            </property>
           </widget>
          </item>
         </layout>
+       </item>
+       <item row="1" column="3">
+        <widget class="QPlainTextEdit" name="unvisitInterfaceUriTextEdit">
+         <property name="placeholderText">
+          <string>填写程序不应该请求的接口，比如退出登录接口，接口格式为：/loginout，一行填写一个接口</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

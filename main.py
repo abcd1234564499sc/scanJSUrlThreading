@@ -106,10 +106,10 @@ class Main(QWidget, Ui_Main_Form):
         return reConfDic
 
     def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], extraUrlArr=[], nowCookie="",
-                       proxies=None):
+                       proxies=None, unvisitInterfaceUri=[]):
         urlScrapy = UrlScrapyManage(scrawlUrlArr=scrawlUrlArr, maxThreadCount=maxThreadCount,
                                     sensiveKeyList=sensiveKeyList, extraUrlArr=extraUrlArr, nowCookie=nowCookie,
-                                    proxies=proxies)
+                                    proxies=proxies, unvisitInterfaceUri=unvisitInterfaceUri)
         urlScrapy.signal_log[str].connect(self.writeLog)
         urlScrapy.signal_log[str, str].connect(self.writeLog)
         urlScrapy.signal_url_result.connect(self.writeUrlResult)
@@ -214,6 +214,9 @@ class Main(QWidget, Ui_Main_Form):
         else:
             pass
 
+        # 读取不爬取接口
+        nowUnvisitInterfaceUri = [a for a in self.unvisitInterfaceUriTextEdit.toPlainText().split("\n") if a != ""]
+
         # 清空结果区域
         self.clearTable()
         self.clearTableSen()
@@ -222,7 +225,8 @@ class Main(QWidget, Ui_Main_Form):
         self.pushButton_2.setEnabled(True)
 
         self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount, sensiveKeyList=self.confDic["sensiveKeyList"],
-                                             extraUrlArr=nowExtraUrlArr, nowCookie=nowCookieDic, proxies=self.proxies)
+                                             extraUrlArr=nowExtraUrlArr, nowCookie=nowCookieDic, proxies=self.proxies,
+                                             unvisitInterfaceUri=nowUnvisitInterfaceUri)
 
         try:
             self.urlScrapy.start()
