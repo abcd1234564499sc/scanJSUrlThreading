@@ -99,7 +99,7 @@ def getUrlDomain(url):
         urlObj = urllib.parse.urlsplit(url)
         domain = urllib.parse.urlunsplit(tuple(list(urlObj[:2]) + [""] * 3))
     except:
-        domain = "0.0.0." + random.randint(0, 254)
+        domain = "0.0.0." + str(random.randint(0, 254))
     return domain
 
 
