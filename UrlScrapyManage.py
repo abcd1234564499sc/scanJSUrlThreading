@@ -2,6 +2,7 @@
 # coding=utf-8
 import json
 import time
+import myUtils
 from queue import Queue
 
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -21,7 +22,7 @@ class UrlScrapyManage(QThread):
         super(UrlScrapyManage, self).__init__(parent)
         self.scrawlUrlArr = scrawlUrlArr
         self.scrawlUrl = ""
-        self.vistedLinkList = []
+        self.vistedLinkList = []       # 该列表用于去重，只记录URL参数，不记录参数的值
         self.urlQueue = Queue()
         self.processCount = 5
         self.resultList = []
@@ -41,7 +42,7 @@ class UrlScrapyManage(QThread):
         # 将启动URL加入队列
         for scrawlUrl in self.scrawlUrlArr:
             self.urlQueue.put((scrawlUrl, scrawlUrl))
-            self.vistedLinkList.append(scrawlUrl)
+            self.vistedLinkList.append(myUtils.parseUrlWithoutArgsValue(scrawlUrl))
 
         # 创建一个候选线程队列
         scrapyWaitQueue = Queue()
@@ -105,8 +106,9 @@ class UrlScrapyManage(QThread):
             for tempLinkItem in reLinkList:
                 tempLink = tempLinkItem[0]
                 tempStartLink = tempLinkItem[1]
-                if tempLink not in self.vistedLinkList:
-                    self.vistedLinkList.append(tempLink)
+                tempLinkWithoutArgValue = myUtils.parseUrlWithoutArgsValue(tempLinkItem[0])
+                if tempLinkWithoutArgValue not in self.vistedLinkList:
+                    self.vistedLinkList.append(tempLinkWithoutArgValue)
                     self.urlQueue.put((tempLink, tempStartLink))
                 else:
                     pass

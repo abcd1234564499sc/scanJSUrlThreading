@@ -377,3 +377,23 @@ def ifSameUri(uri, url):
     else:
         reFlag = False
     return reFlag
+
+# 传入一个URL，去除该URL参数的值，返回类似：http:domain:port/a1=&a2= 的字符串
+def parseUrlWithoutArgsValue(url):
+    reUrl = ""
+    splitList = urllib.parse.urlsplit(url)
+    nowArgs = splitList[3]
+    # 去除参数值
+    tmpArgsList = nowArgs.split("&")
+    if len(tmpArgsList)==1 and tmpArgsList[0]=="":
+        reUrl = url
+    else:
+        for argIndex,tmpArg in enumerate(tmpArgsList):
+            tmpArgList = tmpArg.split("=")
+            tmpList = tmpArgList[:1]+[""]
+            tmpArgsList[argIndex]="=".join(tmpList)
+        finalArgStr = "&".join(tmpArgsList)
+
+        reUrl=urllib.parse.urlunsplit(tuple(list(splitList[:3])+[finalArgStr]+list(splitList[4:])))
+
+    return reUrl
