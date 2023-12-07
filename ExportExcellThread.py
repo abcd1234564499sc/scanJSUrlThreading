@@ -67,7 +67,7 @@ class ExportExcellThread(QThread):
                 # 指定数量行保存一次
                 if rowIndex != 0 and rowIndex % self.saveCount == 0:
                     myUtils.saveExcell(wb, saveName=filename)
-                    wb = oxl.open(filename)
+                    wb = oxl.load_workbook(filename)
                     ws = wb.get_sheet_by_name(wb.get_sheet_names()[0])
 
             # 设置列宽
@@ -75,7 +75,7 @@ class ExportExcellThread(QThread):
             myUtils.setExcellColWidth(ws, colWidthArr)
 
             myUtils.saveExcell(wb, saveName=filename)
-            wb = oxl.open(filename)
+            wb = oxl.load_workbook(filename)
             self.signal_log.emit("URL扫描结果导出成功")
 
             # 创建敏感信息扫描结果子表
@@ -108,7 +108,7 @@ class ExportExcellThread(QThread):
                 # 指定数量行保存一次
                 if rowIndex != 0 and rowIndex % self.saveCount == 0:
                     myUtils.saveExcell(wb, saveName=filename)
-                    wb = oxl.open(filename)
+                    wb = oxl.load_workbook(filename)
                     ws = wb.get_sheet_by_name(wb.get_sheet_names()[1])
 
             # 设置列宽

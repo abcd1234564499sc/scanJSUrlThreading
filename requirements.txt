@@ -2,4 +2,4 @@ requests==2.24.0
 openpyxl==2.4.11
 beautifulsoup4==4.10.0
 PyQt5==5.15.6
-lxml==4.9.1
+lxml
