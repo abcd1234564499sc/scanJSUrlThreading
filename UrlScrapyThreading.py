@@ -192,15 +192,15 @@ class UrlScrapyThreading(QThread):
                 # 与当前输入网站域名结合
                 reList.append(urllib.parse.urljoin(nowScrawlDomain, link))
                 # 与当前输入网站URL结合
-                reList.append(myUtils.joinUrl(myUtils.getUrlWithoutFile(nowScrawlUrl), link))
+                reList.append(urllib.parse.urljoin(myUtils.getUrlWithoutFile(nowScrawlUrl), link))
                 # 与开始输入网站域名相结合
                 reList.append(urllib.parse.urljoin(nowStartDomain, link))
                 # 与当前输入网站URL结合
-                reList.append(myUtils.joinUrl(myUtils.getUrlWithoutFile(self.startUrl), link))
+                reList.append(urllib.parse.urljoin(myUtils.getUrlWithoutFile(self.startUrl), link))
                 # 与js文件域名结合
                 reList.append(urllib.parse.urljoin(nowUrlDomain, link))
                 # 与js文件地址结合
-                reList.append(myUtils.joinUrl(myUtils.getUrlWithoutFile(nowUrl), link))
+                reList.append(urllib.parse.urljoin(myUtils.getUrlWithoutFile(nowUrl), link))
                 # 与额外传入的URL地址结合
                 for nowExtraUrl in extraUrlArr:
                     reList.append(urllib.parse.urljoin(nowExtraUrl, link))
