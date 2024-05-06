@@ -47,6 +47,10 @@ class Main(QWidget, Ui_Main_Form):
         warnings.filterwarnings("ignore")
         self.confDic = self.initConfFile()
         self.confWindow = ConfWindow(self.confDic)
+        self.userAgentDic = {}
+        self.userAgentDic[0]="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+        self.userAgentDic[1]="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0"
+        self.userAgentDic[2]="Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0; .NET CLR 2.0.50727; SLCC2; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; InfoPath.3; .NET4.0C; Tablet PC 2.0; .NET4.0E)"
 
     # 初始化配置文件，生成配置文件并返回一个配置字典
     # 字典结构为：{
@@ -106,10 +110,10 @@ class Main(QWidget, Ui_Main_Form):
         return reConfDic
 
     def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], extraUrlArr=[], nowCookie="",
-                       proxies=None, unvisitInterfaceUri=[]):
+                       proxies=None, unvisitInterfaceUri=[],userAgent=""):
         urlScrapy = UrlScrapyManage(scrawlUrlArr=scrawlUrlArr, maxThreadCount=maxThreadCount,
                                     sensiveKeyList=sensiveKeyList, extraUrlArr=extraUrlArr, nowCookie=nowCookie,
-                                    proxies=proxies, unvisitInterfaceUri=unvisitInterfaceUri)
+                                    proxies=proxies, unvisitInterfaceUri=unvisitInterfaceUri,userAgent=userAgent)
         urlScrapy.signal_log[str].connect(self.writeLog)
         urlScrapy.signal_log[str, str].connect(self.writeLog)
         urlScrapy.signal_url_result.connect(self.writeUrlResult)
@@ -217,6 +221,12 @@ class Main(QWidget, Ui_Main_Form):
         # 读取不爬取接口
         nowUnvisitInterfaceUri = [a for a in self.unvisitInterfaceUriTextEdit.toPlainText().split("\n") if a != ""]
 
+        # 读取User-Agent
+        nowUserAgent = self.userAgentValTextEdit.toPlainText().strip()
+        if nowUserAgent == "":
+            self.writeLog("请选择或输入想使用的UA", color="red")
+            return
+
         # 清空结果区域
         self.clearTable()
         self.clearTableSen()
@@ -226,7 +236,7 @@ class Main(QWidget, Ui_Main_Form):
 
         self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount, sensiveKeyList=self.confDic["sensiveKeyList"],
                                              extraUrlArr=nowExtraUrlArr, nowCookie=nowCookieDic, proxies=self.proxies,
-                                             unvisitInterfaceUri=nowUnvisitInterfaceUri)
+                                             unvisitInterfaceUri=nowUnvisitInterfaceUri,userAgent=nowUserAgent)
 
         try:
             self.urlScrapy.start()
@@ -391,6 +401,10 @@ class Main(QWidget, Ui_Main_Form):
             self.plainTextEdit.setPlainText(readStr)
         else:
             pass
+
+    def userAgentModelChange(self,modelIndex):
+        nowSelectUserAgent = self.userAgentDic[modelIndex]
+        self.userAgentValTextEdit.setPlainText(nowSelectUserAgent)
 
 
 if __name__ == "__main__":

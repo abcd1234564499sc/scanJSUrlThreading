@@ -18,7 +18,7 @@ class UrlScrapyManage(QThread):
     signal_end = pyqtSignal(bool)
 
     def __init__(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], parent=None, extraUrlArr=[],
-                 nowCookie="", proxies=None, unvisitInterfaceUri=[]):
+                 nowCookie="", proxies=None, unvisitInterfaceUri=[],userAgent=""):
         super(UrlScrapyManage, self).__init__(parent)
         self.scrawlUrlArr = scrawlUrlArr
         self.scrawlUrl = ""
@@ -33,6 +33,7 @@ class UrlScrapyManage(QThread):
         self.nowCookie = nowCookie
         self.proxies = proxies
         self.unvisitInterfaceUri = unvisitInterfaceUri
+        self.userAgent = userAgent
 
     def run(self):
         self.signal_log[str, str].emit("扫描开始", "blue")
@@ -56,7 +57,7 @@ class UrlScrapyManage(QThread):
                 nowScrapyThread = self.createThreadObj(nowUrl, self.sensiveKeyList, startUrl=nowStartUrl,
                                                        extraUrlArr=self.extraUrlArr, nowCookie=self.nowCookie,
                                                        proxies=self.proxies,
-                                                       unvisitInterfaceUri=self.unvisitInterfaceUri)
+                                                       unvisitInterfaceUri=self.unvisitInterfaceUri,userAgent=self.userAgent)
                 scrapyWaitQueue.put(nowScrapyThread)
 
             # 遍历线程池，将已经完成的线程移除
@@ -90,9 +91,9 @@ class UrlScrapyManage(QThread):
         self.signal_end.emit(True)
 
     def createThreadObj(self, scrawlUrl="", sensiveKeyList=[], startUrl="", extraUrlArr=[], nowCookie="", proxies=None,
-                        unvisitInterfaceUri=[]):
+                        unvisitInterfaceUri=[],userAgent=""):
         threadObj = UrlScrapyThreading(scrawlUrl, sensiveKeyList, startUrl=startUrl, extraUrlArr=extraUrlArr,
-                                       nowCookie=nowCookie, proxies=proxies, unvisitInterfaceUri=unvisitInterfaceUri)
+                                       nowCookie=nowCookie, proxies=proxies, unvisitInterfaceUri=unvisitInterfaceUri,userAgent=userAgent)
         threadObj.signal_end.connect(self.solveThreadResult)
         return threadObj
 
