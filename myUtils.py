@@ -372,7 +372,11 @@ def connectIpPort(ip, port):
 # 判断URL最后的URI是否与输入的相同
 def ifSameUri(uri, url):
     reFlag = False
-    if uri == url[-1 * len(uri):]:
+    # 对传入的参数进行URL解码
+    uri = urllib.parse.unquote(uri)
+    url = urllib.parse.unquote(url)
+    splitUrl = url[-1 * len(uri):]
+    if uri == splitUrl:
         reFlag = True
     else:
         reFlag = False

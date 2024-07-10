@@ -117,11 +117,10 @@ class UrlScrapyThreading(QThread):
             if "href" in aItem.attrs.keys():
                 # 获取链接
                 nowHref = aItem.attrs["href"]
-                nowHref = urllib.parse.urljoin(pageUrl, nowHref)
                 # 判断链接是否能够爬取
                 ifUnvisit = False
                 for tmpUri in unvisitInterfaceUri:
-                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUri,nowHref)
+                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(nowHref, tmpUri)
                     if ifUnvisit:
                         break
                     else:
@@ -130,6 +129,8 @@ class UrlScrapyThreading(QThread):
                     continue
                 else:
                     pass
+                # 将URI进行拼接
+                nowHref = urllib.parse.urljoin(pageUrl, nowHref)
                 # 判断是否属于爬取域名的子域名
                 if myUtils.ifSameMainDomain(nowDomain, myUtils.getUrlDomain(nowHref)):
                     aLinkList.append(nowHref)
@@ -179,14 +180,26 @@ class UrlScrapyThreading(QThread):
                 # 链接自带协议，是完整的地址
                 # 判断是否属于爬取域名的子域名
                 if myUtils.ifSameMainDomain(nowScrawlDomain, myUtils.getUrlDomain(link)):
-                    reList.append(link)
+                    # 判断链接是否能够爬取
+                    ifUnvisit = False
+                    for tmpUri in unvisitInterfaceUri:
+                        ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUri, link)
+                        if ifUnvisit:
+                            break
+                        else:
+                            pass
+                    if ifUnvisit:
+                        continue
+                    else:
+                        reList.append(link)
+
             else:
                 link = urllib.parse.unquote(link, encoding="utf-8", errors=None)
                 link = urllib.parse.quote(link, safe='/', encoding="utf-8", errors=None)
                 # 判断链接是否能够爬取
                 ifUnvisit = False
                 for tmpUri in unvisitInterfaceUri:
-                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUri, link)
+                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(link, tmpUri)
                     if ifUnvisit:
                         break
                     else:
