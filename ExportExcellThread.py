@@ -13,10 +13,11 @@ class ExportExcellThread(QThread):
     signal_end = pyqtSignal(bool, str)
     signal_log = pyqtSignal(str)
 
-    def __init__(self, urlTable, sensiveResultTable, saveCount=1000):
+    def __init__(self, urlTable, sensiveResultTable,otherDomainResultTable, saveCount=1000):
         super(ExportExcellThread, self).__init__()
         self.urlTable = urlTable
         self.sensiveResultTable = sensiveResultTable
+        self.otherDomainResultTable = otherDomainResultTable
         self.saveCount = saveCount
 
     def run(self):
@@ -27,6 +28,7 @@ class ExportExcellThread(QThread):
         try:
             nowUrlResultCount = self.urlTable.rowCount()
             nowSensiveResultCount = self.sensiveResultTable.rowCount()
+            nowOtherDomainResultCount = self.otherDomainResultTable.rowCount()
             # 创建一个excell文件对象
             wb = oxl.Workbook()
             # 创建URL扫描结果子表
@@ -113,6 +115,41 @@ class ExportExcellThread(QThread):
 
             # 设置列宽
             colWidthArr = [7, 70, 7, 60]
+            myUtils.setExcellColWidth(ws, colWidthArr)
+
+            # 创建其他域名扫描结果子表
+            self.signal_log.emit("开始导出其他域名扫描结果")
+            ws = wb.create_sheet("其他域名扫描结果", 2)
+            # 创建表头
+            headArr = ["序号", "域名", "URL"]
+            myUtils.writeExcellHead(ws, headArr)
+
+            # 遍历当前结果
+            for rowIndex in range(nowOtherDomainResultCount):
+                if rowIndex % self.saveCount == 0:
+                    minIndex = rowIndex + 1
+                    maxIndex = rowIndex + self.saveCount if nowOtherDomainResultCount > rowIndex + self.saveCount else nowOtherDomainResultCount
+                    tmpLogStr = "正在导出{0}-{1}行数据".format(minIndex, maxIndex)
+                    self.signal_log.emit(tmpLogStr)
+                else:
+                    pass
+                # 获取当前行的值
+                nowDomain = self.otherDomainResultTable.item(rowIndex, 0).text()
+                nowUrl = self.otherDomainResultTable.item(rowIndex, 1).text()
+
+                # 将值写入excell对象
+                myUtils.writeExcellCell(ws, rowIndex + 2, 1, rowIndex + 1, 0, True)
+                myUtils.writeExcellCell(ws, rowIndex + 2, 2, nowDomain, 0, False)
+                myUtils.writeExcellCell(ws, rowIndex + 2, 3, nowUrl, 0, False,hyperLink=nowUrl)
+                myUtils.writeExcellSpaceCell(ws, rowIndex + 2, 4)
+                # 指定数量行保存一次
+                if rowIndex != 0 and rowIndex % self.saveCount == 0:
+                    myUtils.saveExcell(wb, saveName=filename)
+                    wb = oxl.load_workbook(filename)
+                    ws = wb.get_sheet_by_name(wb.get_sheet_names()[1])
+
+            # 设置列宽
+            colWidthArr = [7, 60, 70]
             myUtils.setExcellColWidth(ws, colWidthArr)
 
             # 保存文件

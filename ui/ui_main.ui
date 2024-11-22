@@ -17,11 +17,11 @@
    <iconset resource="../resource/source.qrc">
     <normaloff>:/图片/icon.png</normaloff>:/图片/icon.png</iconset>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_5" stretch="2,2,4,0">
+  <layout class="QVBoxLayout" name="verticalLayout_6" stretch="6,4,5,0">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <layout class="QGridLayout" name="gridLayout" columnstretch="1,4,0,1,4">
+      <layout class="QGridLayout" name="gridLayout">
        <item row="0" column="0">
         <widget class="QLabel" name="label">
          <property name="font">
@@ -35,34 +35,14 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_7">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>  Cookie  </string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="4">
-        <widget class="QPlainTextEdit" name="unvisitInterfaceUriTextEdit">
+       <item row="0" column="1">
+        <widget class="QPlainTextEdit" name="plainTextEdit">
          <property name="placeholderText">
-          <string>填写程序不应该请求的接口，比如退出登录接口，接口格式为：/loginout，一行填写一个接口</string>
+          <string>填写要爬取接口的地址，多个地址一行填写一个</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="1" colspan="2">
-        <widget class="QTextEdit" name="cookiesTextEdit">
-         <property name="placeholderText">
-          <string>输入报文中的cookie字段，例：报文为：Cookie:uuid=123456; d_c0=456789,则在此处输入 uuid=123456; d_c0=456789，留空则不使用cookie</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3">
+       <item row="0" column="2">
         <widget class="QLabel" name="label_6">
          <property name="font">
           <font>
@@ -75,44 +55,14 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1" colspan="2">
-        <widget class="QPlainTextEdit" name="plainTextEdit">
-         <property name="placeholderText">
-          <string>填写要爬取接口的地址，多个地址一行填写一个</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="3">
-        <widget class="QLabel" name="label_10">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>UA值</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="4">
+       <item row="0" column="3">
         <widget class="QPlainTextEdit" name="extraUrlTextEdit">
          <property name="placeholderText">
           <string>填写需要与找到接口进行拼接的其他地址，该地址不会爬取其中的接口，但会将其与目的地址中爬取到的接口进行拼接后请求</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="4">
-        <widget class="QPlainTextEdit" name="userAgentValTextEdit">
-         <property name="plainText">
-          <string>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36</string>
-         </property>
-         <property name="placeholderText">
-          <string>填写请求使用的User-Agent，可通过UA模板下拉框使用内置模板</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="3">
+       <item row="1" column="0">
         <widget class="QLabel" name="label_8">
          <property name="font">
           <font>
@@ -125,7 +75,14 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
+       <item row="1" column="1">
+        <widget class="QPlainTextEdit" name="unvisitInterfaceUriTextEdit">
+         <property name="placeholderText">
+          <string>填写程序不应该请求的接口，比如退出登录接口，接口格式为：/loginout，一行填写一个接口</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
         <widget class="QLabel" name="label_9">
          <property name="font">
           <font>
@@ -134,27 +91,81 @@
           </font>
          </property>
          <property name="text">
-          <string>UA模板</string>
+          <string>UA值</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1" colspan="2">
-        <widget class="QComboBox" name="userAgentModelComboBox">
+       <item row="1" column="3">
+        <layout class="QVBoxLayout" name="verticalLayout_5">
          <item>
-          <property name="text">
-           <string>chrome</string>
-          </property>
+          <widget class="QComboBox" name="userAgentModelComboBox">
+           <item>
+            <property name="text">
+             <string>chrome</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>firefox</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>ie</string>
+            </property>
+           </item>
+          </widget>
          </item>
          <item>
-          <property name="text">
-           <string>firefox</string>
-          </property>
+          <widget class="QPlainTextEdit" name="userAgentValTextEdit">
+           <property name="plainText">
+            <string>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36</string>
+           </property>
+           <property name="placeholderText">
+            <string>填写请求使用的User-Agent，可通过UA模板下拉框使用内置模板</string>
+           </property>
+          </widget>
          </item>
-         <item>
-          <property name="text">
-           <string>ie</string>
-          </property>
-         </item>
+        </layout>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>  Cookie  </string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QTextEdit" name="cookiesTextEdit">
+         <property name="placeholderText">
+          <string>输入报文中的cookie字段，例：报文为：Cookie:uuid=123456; d_c0=456789,则在此处输入 uuid=123456; d_c0=456789，留空则不使用cookie</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QLabel" name="label_10">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Header</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="3">
+        <widget class="QTextEdit" name="headersTextEdit">
+         <property name="placeholderText">
+          <string>输入报文中的Header字段，格式为： key:value，每行一条，例：Content-Type: application/json【换行】Authorization: testSecuret，留空则使用默认header</string>
+         </property>
         </widget>
        </item>
       </layout>
@@ -252,24 +263,15 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item alignment="Qt::AlignHCenter">
-        <widget class="QLabel" name="label_3">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>11</pointsize>
-           <weight>50</weight>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>请求结果</string>
-         </property>
-        </widget>
-       </item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>请求结果</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
         <widget class="QTableWidget" name="tableWidget">
          <property name="sortingEnabled">
@@ -277,32 +279,37 @@
          </property>
         </widget>
        </item>
-       <item alignment="Qt::AlignRight">
-        <widget class="QCheckBox" name="checkBox">
-         <property name="text">
-          <string>显示过滤内容</string>
-         </property>
-        </widget>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="checkBox">
+           <property name="text">
+            <string>显示过滤内容</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
-       <item alignment="Qt::AlignHCenter">
-        <widget class="QLabel" name="label_5">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>11</pointsize>
-           <weight>50</weight>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>敏感信息</string>
-         </property>
-        </widget>
-       </item>
+     </widget>
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
+       <string>敏感信息</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
        <item>
         <widget class="QTableWidget" name="tableWidget_2">
          <property name="sortingEnabled">
@@ -310,16 +317,23 @@
          </property>
         </widget>
        </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_3">
+      <attribute name="title">
+       <string>其他域名</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_7">
        <item>
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string/>
+        <widget class="QTableWidget" name="tableWidget_3">
+         <property name="sortingEnabled">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
       </layout>
-     </item>
-    </layout>
+     </widget>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">

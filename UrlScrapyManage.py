@@ -13,12 +13,13 @@ from UrlScrapyThreading import UrlScrapyThreading
 class UrlScrapyManage(QThread):
     signal_url_result = pyqtSignal(str)
     signal_sensive_result = pyqtSignal(str)
+    signal_other_domain_result = pyqtSignal(str)
     signal_log = pyqtSignal([str], [str, str])
     signal_progress = pyqtSignal(str, str, str)
     signal_end = pyqtSignal(bool)
 
     def __init__(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], parent=None, extraUrlArr=[],
-                 nowCookie="", proxies=None, unvisitInterfaceUri=[],userAgent=""):
+                 nowCookie={}, proxies=None, unvisitInterfaceUri=[],userAgent="",nowHeaders={}):
         super(UrlScrapyManage, self).__init__(parent)
         self.scrawlUrlArr = scrawlUrlArr
         self.scrawlUrl = ""
@@ -34,6 +35,7 @@ class UrlScrapyManage(QThread):
         self.proxies = proxies
         self.unvisitInterfaceUri = unvisitInterfaceUri
         self.userAgent = userAgent
+        self.nowHeaders = nowHeaders
 
     def run(self):
         self.signal_log[str, str].emit("扫描开始", "blue")
@@ -57,7 +59,7 @@ class UrlScrapyManage(QThread):
                 nowScrapyThread = self.createThreadObj(nowUrl, self.sensiveKeyList, startUrl=nowStartUrl,
                                                        extraUrlArr=self.extraUrlArr, nowCookie=self.nowCookie,
                                                        proxies=self.proxies,
-                                                       unvisitInterfaceUri=self.unvisitInterfaceUri,userAgent=self.userAgent)
+                                                       unvisitInterfaceUri=self.unvisitInterfaceUri,userAgent=self.userAgent,nowHeaders=self.nowHeaders)
                 scrapyWaitQueue.put(nowScrapyThread)
 
             # 遍历线程池，将已经完成的线程移除
@@ -90,10 +92,10 @@ class UrlScrapyManage(QThread):
         self.signal_log[str, str].emit("扫描结束", "blue")
         self.signal_end.emit(True)
 
-    def createThreadObj(self, scrawlUrl="", sensiveKeyList=[], startUrl="", extraUrlArr=[], nowCookie="", proxies=None,
-                        unvisitInterfaceUri=[],userAgent=""):
+    def createThreadObj(self, scrawlUrl="", sensiveKeyList=[], startUrl="", extraUrlArr=[], nowCookie={}, proxies=None,
+                        unvisitInterfaceUri=[],userAgent="",nowHeaders={}):
         threadObj = UrlScrapyThreading(scrawlUrl, sensiveKeyList, startUrl=startUrl, extraUrlArr=extraUrlArr,
-                                       nowCookie=nowCookie, proxies=proxies, unvisitInterfaceUri=unvisitInterfaceUri,userAgent=userAgent)
+                                       nowCookie=nowCookie, proxies=proxies, unvisitInterfaceUri=unvisitInterfaceUri,userAgent=userAgent,nowHeaders=nowHeaders)
         threadObj.signal_end.connect(self.solveThreadResult)
         return threadObj
 
@@ -103,6 +105,7 @@ class UrlScrapyManage(QThread):
             reDic = json.loads(reDicStr)
             reLinkList = reDic.pop("linkList")
             reSensiveList = reDic.pop("sensiveInfoList")
+            reOtherDomainList = reDic.pop("otherDomainList")
             # 写入新的链接
             for tempLinkItem in reLinkList:
                 tempLink = tempLinkItem[0]
@@ -118,5 +121,7 @@ class UrlScrapyManage(QThread):
             self.signal_url_result.emit(reDicStr)
             reSensiveStr = json.dumps(reSensiveList)
             self.signal_sensive_result.emit(reSensiveStr)
+            reOtherDomainStr = json.dumps(reOtherDomainList)
+            self.signal_other_domain_result.emit(reOtherDomainStr)
         else:
             pass

@@ -24,15 +24,23 @@ class Main(QWidget, Ui_Main_Form):
         self.setupUi(self)
         self.tableWidget.setColumnCount(6)
         self.tableWidget.setHorizontalHeaderLabels(["URL", "响应码", "标题", "包长度", "URL类型"])
+        self.urlResultDictKeyList = ["url","status","title","contentLength","urlType"]
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableWidget.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
         self.tableWidget.setColumnWidth(1, 60)
         self.tableWidget.hideColumn(5)
         self.tableWidget_2.setColumnCount(3)
         self.tableWidget_2.setHorizontalHeaderLabels(["URL", "关键词", "敏感信息"])
+        self.sensiveDictKeyList = ["url","key","seneiveStr"]
         self.tableWidget_2.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableWidget_2.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
         self.tableWidget_2.setColumnWidth(1, 100)
+        self.tableWidget_3.setColumnCount(2)
+        self.tableWidget_3.setHorizontalHeaderLabels(["域名","URL"])
+        self.otherDomainResultDictKeyList = ["domain", "url"]
+        self.tableWidget_3.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableWidget_3.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
+        self.tableWidget_3.setColumnWidth(1, 600)
         self.urlRegex = re.compile(
             r'^(?:http|ftp)s?://'  # http:// or https://
             r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
@@ -70,7 +78,7 @@ class Main(QWidget, Ui_Main_Form):
     def initConfFile(self):
         defaultMaxThreadCount = 50
         defaultExportSaveCount = 1000
-        defaultSensiveKeyList = ["默认密码", "默认账号", "默认用户名", "default username", "default password"]
+        defaultSensiveKeyList = ["默认密码", "默认账号", "默认用户名", "default username", "default password","ftp:","ftp@","svn:","svn+",".git",".js.map","jdbc:","file:"]
         defaultFilterList = []
         defaultIfProxy = 0
         defaultIfProxyHttps = 0
@@ -109,15 +117,16 @@ class Main(QWidget, Ui_Main_Form):
 
         return reConfDic
 
-    def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], extraUrlArr=[], nowCookie="",
-                       proxies=None, unvisitInterfaceUri=[],userAgent=""):
+    def createCrawlObj(self, scrawlUrlArr=[], maxThreadCount=50, sensiveKeyList=[], extraUrlArr=[], nowCookie={},
+                       proxies=None, unvisitInterfaceUri=[],userAgent="",nowHeaders={}):
         urlScrapy = UrlScrapyManage(scrawlUrlArr=scrawlUrlArr, maxThreadCount=maxThreadCount,
                                     sensiveKeyList=sensiveKeyList, extraUrlArr=extraUrlArr, nowCookie=nowCookie,
-                                    proxies=proxies, unvisitInterfaceUri=unvisitInterfaceUri,userAgent=userAgent)
+                                    proxies=proxies, unvisitInterfaceUri=unvisitInterfaceUri,userAgent=userAgent,nowHeaders=nowHeaders)
         urlScrapy.signal_log[str].connect(self.writeLog)
         urlScrapy.signal_log[str, str].connect(self.writeLog)
         urlScrapy.signal_url_result.connect(self.writeUrlResult)
         urlScrapy.signal_sensive_result.connect(self.writeSensiveResult)
+        urlScrapy.signal_other_domain_result.connect(self.writeOtherDomainResult)
         urlScrapy.signal_progress.connect(self.writeProgress)
         urlScrapy.signal_end.connect(self.terminateCrawl)
         return urlScrapy
@@ -218,6 +227,44 @@ class Main(QWidget, Ui_Main_Form):
         else:
             pass
 
+        # 读取headers
+        nowHeaders = self.headersTextEdit.toPlainText()
+        nowHeaders = nowHeaders.strip(" ")
+        nowHeaderDic = {}
+        headerRegexStr = "^[ ]*(?P<key>.+?)[ ]*:[ ]*(?P<value>.+?)[ ]*$"
+        notUpdateHeaderKeys = []
+        notUpdateHeaderKeys.append("cookie")
+        notUpdateHeaderKeys.append("user-agent")
+        if nowHeaders != "":
+            # 按行读取
+            nowHeaderList = nowHeaders.split("\n")
+            for tmpHeaderIndex,tmpHeaderStr in enumerate(nowHeaderList):
+                tmpRegexResult = re.search(headerRegexStr,tmpHeaderStr,re.I)
+                if tmpRegexResult is not None:
+                    tmpRegexResultDict = tmpRegexResult.groupdict()
+                    tmpKey = tmpRegexResultDict["key"].strip()
+                    tmpValue = tmpRegexResultDict["value"].strip()
+
+                    # 判断是否是需要跳过的header key
+                    ifUpdateFlag = True
+                    for tmpNotUpdateKey in notUpdateHeaderKeys:
+                        tmpKeyRegexResult = re.search(tmpNotUpdateKey,tmpKey,re.I)
+                        if tmpKeyRegexResult is not None:
+                            ifUpdateFlag = False
+                            break
+                        else:
+                            continue
+
+                    if ifUpdateFlag:
+                        nowHeaderDic[tmpKey] = tmpValue
+                    else:
+                        continue
+                else:
+                    self.writeLog(f"输入的第{tmpHeaderIndex+1}行header格式错误，正确格式应为: key:value", color="red")
+                    return
+        else:
+            pass
+
         # 读取不爬取接口
         nowUnvisitInterfaceUri = [a for a in self.unvisitInterfaceUriTextEdit.toPlainText().split("\n") if a != ""]
 
@@ -230,13 +277,15 @@ class Main(QWidget, Ui_Main_Form):
         # 清空结果区域
         self.clearTable()
         self.clearTableSen()
+        self.clearTableOther()
+        self.saveOtherDomainResultList = []
         # 设置按钮状态
         self.pushButton.setEnabled(False)
         self.pushButton_2.setEnabled(True)
 
         self.urlScrapy = self.createCrawlObj(nowUrlArr, maxThreadCount, sensiveKeyList=self.confDic["sensiveKeyList"],
                                              extraUrlArr=nowExtraUrlArr, nowCookie=nowCookieDic, proxies=self.proxies,
-                                             unvisitInterfaceUri=nowUnvisitInterfaceUri,userAgent=nowUserAgent)
+                                             unvisitInterfaceUri=nowUnvisitInterfaceUri,userAgent=nowUserAgent,nowHeaders=nowHeaderDic)
 
         try:
             self.urlScrapy.start()
@@ -247,11 +296,12 @@ class Main(QWidget, Ui_Main_Form):
         exportSaveCount = int(self.confDic["exportSaveCount"])
         nowUrlResultCount = self.tableWidget.rowCount()
         nowSensiveResultCount = self.tableWidget_2.rowCount()
-        if nowUrlResultCount == 0 and nowSensiveResultCount == 0:
+        nowOtherDomainResultCount = self.tableWidget_3.rowCount()
+        if nowUrlResultCount == 0 and nowSensiveResultCount == 0 and nowOtherDomainResultCount == 0:
             self.writeLog("当前无可导出数据", color="red")
             return
 
-        self.exportExcellThread = ExportExcellThread(self.tableWidget, self.tableWidget_2, exportSaveCount)
+        self.exportExcellThread = ExportExcellThread(self.tableWidget, self.tableWidget_2,self.tableWidget_3, exportSaveCount)
         self.exportExcellThread.signal_end.connect(self.exportCompleted)
         self.exportExcellThread.signal_log.connect(self.writeLog)
         self.exportExcellThread.start()
@@ -272,6 +322,9 @@ class Main(QWidget, Ui_Main_Form):
     def clearTableSen(self):
         while self.tableWidget_2.rowCount() != 0:
             self.tableWidget_2.removeRow(self.tableWidget_2.rowCount() - 1)
+    def clearTableOther(self):
+        while self.tableWidget_3.rowCount() != 0:
+            self.tableWidget_3.removeRow(self.tableWidget_3.rowCount() - 1)
 
     def terminateCrawl(self, ifAuto=False):
         self.pushButton.setEnabled(True)
@@ -295,7 +348,7 @@ class Main(QWidget, Ui_Main_Form):
         nowRowCount = self.tableWidget.rowCount()
         self.tableWidget.insertRow(nowRowCount)
         ifFilter = self.ifResultFilter(resultDic, self.confDic["filterList"])
-        for index, tempKey in enumerate(resultDic.keys()):
+        for index, tempKey in enumerate(self.urlResultDictKeyList):
             tempItem = QTableWidgetItem()
             if index != 3:
                 tempItem.setText(str(resultDic[tempKey]))
@@ -382,9 +435,24 @@ class Main(QWidget, Ui_Main_Form):
         nowRowCount = self.tableWidget_2.rowCount()
         for resultDic in resultList:
             self.tableWidget_2.insertRow(nowRowCount)
-            for index, tempKey in enumerate(resultDic.keys()):
+            for index, tempKey in enumerate(self.sensiveDictKeyList):
                 tempItem = QTableWidgetItem(str(resultDic[tempKey]))
                 self.tableWidget_2.setItem(nowRowCount, index, tempItem)
+
+    def writeOtherDomainResult(self, resultListStr):
+        resultList = json.loads(resultListStr)
+        nowRowCount = self.tableWidget_3.rowCount()
+        for resultDic in resultList:
+            # 判断是否是已经写入过的数据
+            tmpResultStr = json.dumps(resultDic)
+            if tmpResultStr in self.saveOtherDomainResultList:
+                continue
+            else:
+                self.tableWidget_3.insertRow(nowRowCount)
+                for index, tempKey in enumerate(self.otherDomainResultDictKeyList):
+                    tempItem = QTableWidgetItem(str(resultDic[tempKey]))
+                    self.tableWidget_3.setItem(nowRowCount, index, tempItem)
+                self.saveOtherDomainResultList.append(tmpResultStr)
 
     def writeProgress(self, visitedCount, remainCount, threadCount):
         log = "有{0}个线程正在访问URL，当前已完成{1}个URL的访问，还有{2}个URL需要访问".format(threadCount, visitedCount, remainCount)

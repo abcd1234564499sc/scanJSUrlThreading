@@ -102,6 +102,19 @@ def getUrlDomain(url):
         domain = "0.0.0." + str(random.randint(0, 254))
     return domain
 
+# 从URL中提取域名部分
+def getUrlOnlyDomain(url):
+    try:
+        urlObj = urllib.parse.urlsplit(url)
+        domain = urlObj[1]
+        # 去除端口号
+        tmpPortStartIndex = domain.find(":")
+        if tmpPortStartIndex!=-1:
+            domain = domain[:tmpPortStartIndex]
+    except:
+        domain = "0.0.0." + str(random.randint(0, 254))
+    return domain
+
 
 # 从URL中提取协议+域名+path部分
 def getUrlWithoutFile(url):
