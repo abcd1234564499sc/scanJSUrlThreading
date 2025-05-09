@@ -7,15 +7,27 @@ import random
 import re
 import socket
 import urllib.parse
+import warnings
 
 import openpyxl as oxl
 import requests
-from bs4 import BeautifulSoup
 from openpyxl.styles import Border, Side, Font, PatternFill
 
 # 全局变量区域
 borderNumDic = {-1: None, 0: "thin"}
 
+# 获得一个用于模拟浏览器的header
+def getBrowerHeader():
+    header = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+    }
+    return header
+
+def findHtmlTitleWithContent(htmlContent):
+    title = ""
+    reTitleList = re.findall(r"<title.*?>(.+?)</title>", htmlContent)
+    title = "None" if len(reTitleList) == 0 else reTitleList[0]
+    return title
 
 # 访问URL,type表示请求类型，0为GET，1为POST，2为PUT
 # 返回值类型如下：
@@ -23,11 +35,15 @@ borderNumDic = {-1: None, 0: "thin"}
 # "url":传入URL,
 # "resultStr":访问结果字符串,
 # "checkFlag":标志是否访问成功的布尔类型变量,
-# "title":访问成功时的页面标题,
 # "pageContent":访问成功时的页面源码，
-# "status":访问的响应码
+# "status":访问的响应码,
+# "responseHeaders":响应头，是一个字典,
+# "responseCostSecond":响应时间（秒）,
+# "response":requests库请求后返回的response对象
 # }
-def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readTimeout=10, proxies=None):
+def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readTimeout=10, proxies=None,
+                dataType="form", files={}):
+    warnings.filterwarnings("ignore")
     resDic = {}
     url = url.strip()
 
@@ -37,23 +53,38 @@ def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readT
     title = ""
     pageContent = ""
     reContent = ""
+    responseHeaders = {}
     timeout = (reqTimeout, readTimeout)
-    header = header if header != {} else {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
-    }
+    header = header if header != {} else getBrowerHeader()
+    response = None
+    responseCostSecond = 0
 
     try:
         if type == 0:
-            response = requests.get(url, headers=header, verify=False, cookies=cookie, timeout=timeout, proxies=proxies)
+            response = requests.get(url, headers=header, verify=False, cookies=cookie, timeout=timeout,
+                                    proxies=proxies)
         elif type == 1:
-            response = requests.post(url, headers=header, verify=False, cookies=cookie, data=data, timeout=timeout,
-                                     proxies=proxies)
+            if dataType == "form":
+                response = requests.post(url, headers=header, verify=False, cookies=cookie, data=data, timeout=timeout,
+                                         proxies=proxies)
+            elif dataType == "json":
+                response = requests.post(url, headers=header, verify=False, cookies=cookie, json=data, timeout=timeout,
+                                         proxies=proxies)
+            elif dataType == "files":
+                response = requests.post(url, headers=header, verify=False, cookies=cookie, data=data, files=files,
+                                         timeout=timeout,
+                                         proxies=proxies)
+            else:
+                response = requests.post(url, headers=header, verify=False, cookies=cookie, data=data, timeout=timeout,
+                                         proxies=proxies)
         elif type == 2:
             response = requests.put(url, headers=header, verify=False, cookies=cookie, data=data, timeout=timeout,
                                     proxies=proxies)
         else:
             pass
         status = response.status_code
+        responseHeaders = dict(response.headers)
+        responseCostSecond = response.elapsed.total_seconds()
         if str(status)[0] == "2" or str(status)[0] == "3":
             # 获得页面编码
             pageEncoding = response.apparent_encoding
@@ -61,9 +92,12 @@ def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readT
             response.encoding = pageEncoding
             # 获得页面内容
             reContent = response.text
-            soup = BeautifulSoup(reContent, "lxml")
-            title = "成功访问，但无法获得标题" if not soup.title else soup.title.string
+            title = findHtmlTitleWithContent(reContent)
             resultStr = "验证成功，标题为：{0}".format(title)
+            checkedFlag = True
+        elif str(status)[0] == "4":
+            title = "404 Not Found"
+            resultStr = "请求资源不存在"
             checkedFlag = True
         else:
             resultStr = "验证失败，状态码为{0}".format(status)
@@ -79,7 +113,75 @@ def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readT
     resDic["title"] = title
     resDic["status"] = status
     resDic["pageContent"] = reContent
+    resDic["responseHeaders"] = responseHeaders
+    resDic["responseCostSecond"] = responseCostSecond
+    resDic["response"] = response
     return resDic
+
+
+# 访问URL,type表示请求类型，0为GET，1为POST，2为PUT
+# 返回值类型如下：
+# {
+# "url":传入URL,
+# "resultStr":访问结果字符串,
+# "checkFlag":标志是否访问成功的布尔类型变量,
+# "title":访问成功时的页面标题,
+# "pageContent":访问成功时的页面源码，
+# "status":访问的响应码
+# }
+# def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readTimeout=10, proxies=None):
+#     resDic = {}
+#     url = url.strip()
+#
+#     resultStr = ""
+#     checkedFlag = False
+#     status = ""
+#     title = ""
+#     pageContent = ""
+#     reContent = ""
+#     timeout = (reqTimeout, readTimeout)
+#     header = header if header != {} else {
+#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+#     }
+#
+#     try:
+#         if type == 0:
+#             response = requests.get(url, headers=header, verify=False, cookies=cookie, timeout=timeout, proxies=proxies)
+#         elif type == 1:
+#             response = requests.post(url, headers=header, verify=False, cookies=cookie, data=data, timeout=timeout,
+#                                      proxies=proxies)
+#         elif type == 2:
+#             response = requests.put(url, headers=header, verify=False, cookies=cookie, data=data, timeout=timeout,
+#                                     proxies=proxies)
+#         else:
+#             pass
+#         status = response.status_code
+#         if str(status)[0] == "2" or str(status)[0] == "3":
+#             # 获得页面编码
+#             pageEncoding = response.apparent_encoding
+#             # 设置页面编码
+#             response.encoding = pageEncoding
+#             # 获得页面内容
+#             reContent = response.text
+#             soup = BeautifulSoup(reContent, "lxml")
+#             title = "成功访问，但无法获得标题" if not soup.title else soup.title.string
+#             resultStr = "验证成功，标题为：{0}".format(title)
+#             checkedFlag = True
+#         else:
+#             resultStr = "验证失败，状态码为{0}".format(status)
+#             checkedFlag = False
+#     except Exception as e:
+#         resultStr = str(e)
+#         checkedFlag = False
+#
+#     # 构建返回结果
+#     resDic["url"] = url
+#     resDic["resultStr"] = resultStr
+#     resDic["checkFlag"] = checkedFlag
+#     resDic["title"] = title
+#     resDic["status"] = status
+#     resDic["pageContent"] = reContent
+#     return resDic
 
 
 # 判断该字符串是否是IP，返回一个布尔值
@@ -163,12 +265,8 @@ def ifSameMainDomain(domain1, domain2):
 # 从URL中提取文件后缀名
 def getUrlFileSuffix(url):
     reSuffix = ""
-    urlObj = urllib.parse.urlparse(url)
-    suffixContent = urlObj[2].split("/")[-1]
-    if "." in suffixContent:
-        reSuffix = suffixContent.split(".")[-1]
-    else:
-        reSuffix = ""
+    tmpUrlParseResult = urllib.parse.urlparse(url)
+    reSuffix = tmpUrlParseResult.path.split(".")[-1].strip().lower()
     return reSuffix
 
 
@@ -414,3 +512,165 @@ def parseUrlWithoutArgsValue(url):
         reUrl=urllib.parse.urlunsplit(tuple(list(splitList[:3])+[finalArgStr]+list(splitList[4:])))
 
     return reUrl
+
+
+def getHtmlCrawlerScriptFileSuffixList():
+    scriptFileSuffixList = []
+
+    scriptFileSuffixList.append("js")
+
+    return scriptFileSuffixList
+
+def getHtmlCrawlerCssFileSuffixList():
+    cssFileSuffixList = []
+
+    cssFileSuffixList.append("css")
+
+    return cssFileSuffixList
+
+
+def getHtmlCrawlerSolveStaticFileSuffixList():
+    solveFileSuffixList = []
+    solveFileSuffixList += getHtmlCrawlerScriptFileSuffixList()
+    solveFileSuffixList+=getHtmlCrawlerCssFileSuffixList()
+    solveFileSuffixList.append("xml")
+    return solveFileSuffixList
+
+
+def getHtmlCrawlerNotSolveResourceFileSuffixList():
+    notSolveFileSuffixList = []
+    # 图片后缀
+    notSolveFileSuffixList += [a.strip() for a in
+                               "jpg, jpeg, png, gif, webp, bmp, tiff, svg, ico, heic, psd, raw".split(",")]
+    # 视频后缀
+    notSolveFileSuffixList += [a.strip() for a in
+                               "mp4, avi, mov, mkv, webm, flv, wmv, mpeg, mpg, 3gp, m4v, rmvb, vob".split(",")]
+    # 音频后缀
+    notSolveFileSuffixList += [a.strip() for a in
+                               "mp3, wav, aac, ogg, flac, wma, midi, m4a, aiff, amr, opus".split(",")]
+
+    # 字体后缀
+    notSolveFileSuffixList += [a.strip() for a in
+                               "ttf, otf, woff, woff2, eot, ttc, dfont, svg, svgz, pfb, pfm, bdf, pcf, ufo, vfb".split(",")]
+
+    return notSolveFileSuffixList
+
+def getHtmlCrawlerNotCrawlerFileSuffixList():
+    notSolveFileSuffixList = []
+    # 压缩包后缀
+    notSolveFileSuffixList += [a.strip() for a in
+                               "zip, rar, 7z, tar, gz, bz2, xz, tar gz, tar bz2, tar xz, tgz, z, lz, lzma, lzh, arj, cab, iso, pkg, deb, rpm".split(
+                                   ",")]
+
+    # 二进制文件后缀
+    notSolveFileSuffixList += [a.strip() for a in
+                               "exe, dll, so, dylib, a, lib, bin, img, iso, dmg, sys, o, class, jar, pyc, mo, dat, db, rom, hex".split(
+                                   ",")]
+
+    return notSolveFileSuffixList
+
+
+def extractUrls(text):
+    """
+    从文本中提取完整URL（支持http、https、ftp、file协议）
+    匹配内容包括：协议、域名/IP、端口、路径、查询参数
+    """
+    pattern = re.compile(r"""
+                (?i)                # 忽略大小写
+                (?:https?|ftp|file)(?::|%3A)(?:/|%2F|(?:\\u002F)){2}  # 协议
+                (?:[^:@/]+(?::[^@/]*)?@)?  # 用户名密码
+                (?:
+                    (?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}  # 域名
+                    | (?:\d{1,3}\. ){3}\d{1,3}       # IPv4地址
+                )
+                (?::\d+)?           # 端口号
+                (?:
+                    (?:/|%2F|(?:\\u002F))[a-zA-Z0-9-._~%@#]+     # 路径及片段
+                )*
+                (?:/|%2F|(?:\\u002F))*         # 匹配结尾的/
+                (?:
+                    \?(?:[a-zA-Z0-9-._~%@&=+/]|(?:\\u002F))+
+                )*     # 查询参数
+            """, re.VERBOSE)
+
+    reList = pattern.findall(text)
+
+    return reList
+
+
+def extractUris(text):
+    """
+    从文本中提取URI（/开头，直到特殊字符或空格结尾）
+    """
+    pattern = re.compile(r"""
+                (?i)                # 忽略大小写
+                (?<![<])
+                (?:
+                    (?:/|%2F|(?:\\u002F))[a-zA-Z0-9-._~%@#]+     # 路径及片段
+                )+
+                (?:/|%2F|(?:\\u002F))*         # 匹配结尾的/
+                (?:
+                    \?(?:[a-zA-Z0-9-\._~%@&=+/]|(?:\\u002F))+
+                )*     # 查询参数
+            """, re.VERBOSE)
+
+    reList = pattern.findall(text)
+
+    return reList
+
+def extractSpecilUris(text):
+    """
+    从文本中提取特殊URI（被指定字符包裹，不以/开头，但符合URI格式），包裹字符包括：
+    1、引号（单双引号）
+    """
+    uriPattern = r"""
+                (?:
+                    [a-zA-Z0-9-\._~%@#]+(?:/|%2F|(?:\\u002F))     # 路径及片段
+                )
+                (?:
+                    [a-zA-Z0-9-\._~%@#]+(?:/|%2F|(?:\\u002F))*     # 路径及片段
+                )+
+                (?:
+                    \?(?:[a-zA-Z0-9-\._~%@&=+/]|(?:\\u002F))+
+                )*     # 查询参数
+    """
+
+
+    startCharsList = []
+    startCharsList.append({"chars":['"','"'],"stripChars":['"']})
+    startCharsList.append({"chars":["'","'"],"stripChars":["'"]})
+
+    patternList = []
+
+    for tmpStartCharsDict in startCharsList:
+        pattern = re.compile(r"(?i)"+tmpStartCharsDict["chars"][0]+uriPattern+tmpStartCharsDict["chars"][1], re.VERBOSE)
+        patternList.append({"pattern":pattern,"stripChars":tmpStartCharsDict["stripChars"]})
+
+    # 匹配所有被指定字符包裹的字符串
+    firstSearchList = []
+
+    for tmpPatternDict in patternList:
+        tmpMatchStrList = tmpPatternDict["pattern"].findall(text)
+        tmpStripChars = tmpPatternDict["stripChars"]
+        for tmpStripChar in tmpStripChars:
+            tmpMatchStrList = [s.strip(tmpStripChar) for s in tmpMatchStrList]
+        firstSearchList += tmpMatchStrList
+
+    # # 判断指定字符包裹的字符串是否符合URI特征
+    # reList = []
+    # for tmpSearchStr in firstSearchList:
+    #     if uriPattern.match(tmpSearchStr):
+    #         reList.append(tmpSearchStr)
+    return firstSearchList
+
+def solveExtractedUrls(urlList):
+    # 对提取到的结果进行处理
+    for tmpIndex, tmpUrl in enumerate(urlList):
+        # 将\u002F字符串替换为/
+        partern = r"\\u002f"
+        urlList[tmpIndex] = re.sub(partern, "/", urlList[tmpIndex],flags=re.I)
+
+        # 进行一次URL解码
+        urlList[tmpIndex] = urllib.parse.unquote(urlList[tmpIndex])
+
+    return urlList

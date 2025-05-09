@@ -1,5 +1,4 @@
-requests==2.24.0
 openpyxl==2.4.11
-beautifulsoup4==4.10.0
-PyQt5==5.15.6
-lxml
+PyQt5==5.15.11
+PyQt5_sip==12.15.0
+Requests==2.32.3

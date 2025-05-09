@@ -223,7 +223,6 @@ class Main(QWidget, Ui_Main_Form):
                     nowCookieDic[tmpItemList[0]] = "=".join(tmpItemList[1:])
                 else:
                     continue
-
         else:
             pass
 
