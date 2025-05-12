@@ -24,6 +24,7 @@ class UrlScrapyManage(QThread):
         self.scrawlUrlArr = scrawlUrlArr
         self.scrawlUrl = ""
         self.vistedLinkList = []       # 该列表用于去重，只记录URL参数，不记录参数的值
+        self.fileContentHashList =[]   # 记录请求内容的hash值，防止重复请求相同
         self.urlQueue = Queue()
         self.processCount = 5
         self.resultList = []
@@ -44,7 +45,7 @@ class UrlScrapyManage(QThread):
 
         # 将启动URL加入队列
         for scrawlUrl in self.scrawlUrlArr:
-            self.urlQueue.put((scrawlUrl, scrawlUrl))
+            self.urlQueue.put((scrawlUrl, scrawlUrl,scrawlUrl))
             self.vistedLinkList.append(myUtils.parseUrlWithoutArgsValue(scrawlUrl))
 
         # 创建一个候选线程队列
@@ -56,7 +57,8 @@ class UrlScrapyManage(QThread):
                 nowItem = self.urlQueue.get()
                 nowUrl = nowItem[0]
                 nowStartUrl = nowItem[1]
-                nowScrapyThread = self.createThreadObj(nowUrl, self.sensiveKeyList, startUrl=nowStartUrl,
+                nowCrawlerUrl = nowItem[2]
+                nowScrapyThread = self.createThreadObj(nowUrl, self.sensiveKeyList,crawlerUrl=nowCrawlerUrl, startUrl=nowStartUrl,
                                                        extraUrlArr=self.extraUrlArr, nowCookie=self.nowCookie,
                                                        proxies=self.proxies,
                                                        unvisitInterfaceUri=self.unvisitInterfaceUri,userAgent=self.userAgent,nowHeaders=self.nowHeaders)
@@ -92,9 +94,9 @@ class UrlScrapyManage(QThread):
         self.signal_log[str, str].emit("扫描结束", "blue")
         self.signal_end.emit(True)
 
-    def createThreadObj(self, scrawlUrl="", sensiveKeyList=[], startUrl="", extraUrlArr=[], nowCookie={}, proxies=None,
+    def createThreadObj(self, scrawlUrl="", sensiveKeyList=[], crawlerUrl="",startUrl="", extraUrlArr=[], nowCookie={}, proxies=None,
                         unvisitInterfaceUri=[],userAgent="",nowHeaders={}):
-        threadObj = UrlScrapyThreading(scrawlUrl, sensiveKeyList, startUrl=startUrl, extraUrlArr=extraUrlArr,
+        threadObj = UrlScrapyThreading(scrawlUrl, sensiveKeyList, crawlerUrl=crawlerUrl,startUrl=startUrl, extraUrlArr=extraUrlArr,
                                        nowCookie=nowCookie, proxies=proxies, unvisitInterfaceUri=unvisitInterfaceUri,userAgent=userAgent,nowHeaders=nowHeaders)
         threadObj.signal_end.connect(self.solveThreadResult)
         return threadObj
@@ -103,25 +105,33 @@ class UrlScrapyManage(QThread):
     def solveThreadResult(self, reDicStr):
         if reDicStr != "":
             reDic = json.loads(reDicStr)
+            tmpResContent = reDic.pop("content")
             reLinkList = reDic.pop("linkList")
             reSensiveList = reDic.pop("sensiveInfoList")
             reOtherDomainList = reDic.pop("otherDomainList")
-            # 写入新的链接
-            for tempLinkItem in reLinkList:
-                tempLink = tempLinkItem[0]
-                tempStartLink = tempLinkItem[1]
-                tempLinkWithoutArgValue = myUtils.parseUrlWithoutArgsValue(tempLinkItem[0])
-                if tempLinkWithoutArgValue not in self.vistedLinkList:
-                    self.vistedLinkList.append(tempLinkWithoutArgValue)
-                    self.urlQueue.put((tempLink, tempStartLink))
-                else:
-                    pass
-            # 显示结果
-            reDicStr = json.dumps(reDic)
-            self.signal_url_result.emit(reDicStr)
-            reSensiveStr = json.dumps(reSensiveList)
-            self.signal_sensive_result.emit(reSensiveStr)
-            reOtherDomainStr = json.dumps(reOtherDomainList)
-            self.signal_other_domain_result.emit(reOtherDomainStr)
+            # 计算返回内容的hash值
+            tmpContentHash = myUtils.calcResponseHash(tmpResContent)
+            if tmpContentHash not in self.fileContentHashList:
+                self.fileContentHashList.append(tmpContentHash)
+                # 写入新的链接
+                for tempLinkItem in reLinkList:
+                    tempLink = tempLinkItem[0]
+                    tempStartLink = tempLinkItem[1]
+                    tempCrawlerUrl = tempLinkItem[2]
+                    tempLinkWithoutArgValue = myUtils.parseUrlWithoutArgsValue(tempLinkItem[0])
+                    if tempLinkWithoutArgValue not in self.vistedLinkList:
+                        self.vistedLinkList.append(tempLinkWithoutArgValue)
+                        self.urlQueue.put((tempLink, tempStartLink,tempCrawlerUrl))
+                    else:
+                        pass
+                # 显示结果
+                reDicStr = json.dumps(reDic)
+                self.signal_url_result.emit(reDicStr)
+                reSensiveStr = json.dumps(reSensiveList)
+                self.signal_sensive_result.emit(reSensiveStr)
+                reOtherDomainStr = json.dumps(reOtherDomainList)
+                self.signal_other_domain_result.emit(reOtherDomainStr)
+            else:
+                pass
         else:
             pass

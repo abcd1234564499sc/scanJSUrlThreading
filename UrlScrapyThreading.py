@@ -12,10 +12,11 @@ import myUtils
 class UrlScrapyThreading(QThread):
     signal_end = pyqtSignal(str)
 
-    def __init__(self, scrawlUrl, sensiveKeyList=[], startUrl="", parent=None, extraUrlArr=[], nowCookie={},
+    def __init__(self, scrawlUrl, sensiveKeyList=[],crawlerUrl="", startUrl="", parent=None, extraUrlArr=[], nowCookie={},
                  proxies=None, unvisitInterfaceUri=[],userAgent="",nowHeaders={}):
         super(UrlScrapyThreading, self).__init__(parent)
         self.scrawlUrl = scrawlUrl
+        self.crawlerUrl = crawlerUrl
         self.sensiveKeyList = sensiveKeyList
         self.startUrl = startUrl
         self.extraUrlArr = extraUrlArr
@@ -86,28 +87,28 @@ class UrlScrapyThreading(QThread):
             else:
                 if urlSuffix in myUtils.getHtmlCrawlerScriptFileSuffixList():
                     # 是js文件，使用js文件分析方法分析
-                    tempLinkList,tmpOtherDomainList = self.analysisJSPage(self.scrawlUrl, url, content, extraUrlArr=self.extraUrlArr,
+                    tempLinkList,tmpOtherDomainList = self.analysisJSPage(self.crawlerUrl,url , content, extraUrlArr=self.extraUrlArr,
                                                        unvisitInterfaceUri=self.unvisitInterfaceUri)
                     for tempLink in tempLinkList:
-                        reLinkList.append((tempLink, self.startUrl))
+                        reLinkList.append((tempLink, self.startUrl,url))
 
                     reOtherDomainList+=tmpOtherDomainList
                 elif urlSuffix in myUtils.getHtmlCrawlerCssFileSuffixList():
                     # 是css文件，使用css文件分析方法分析
-                    tempLinkList, tmpOtherDomainList = self.analysisCssPage(self.scrawlUrl, url, content,
+                    tempLinkList, tmpOtherDomainList = self.analysisCssPage(self.crawlerUrl, url, content,
                                                                            extraUrlArr=self.extraUrlArr,
                                                                            unvisitInterfaceUri=self.unvisitInterfaceUri)
                     for tempLink in tempLinkList:
-                        reLinkList.append((tempLink, self.startUrl))
+                        reLinkList.append((tempLink, self.startUrl,url))
 
                     reOtherDomainList += tmpOtherDomainList
                 else:
                     # 不是js和css文件，按HTML文件分析方法分析
                     reHtmlDic = self.analysisHtmlPage(pageUrl=tempDic["url"], pageContent=content,
-                                                      unvisitInterfaceUri=self.unvisitInterfaceUri)
+                                                      unvisitInterfaceUri=self.unvisitInterfaceUri,crawlerUrl=self.crawlerUrl,extraUrlArr=self.extraUrlArr)
                     tempLinkList = reHtmlDic["url"]
                     for tempLink in tempLinkList:
-                        reLinkList.append((tempLink, self.startUrl))
+                        reLinkList.append((tempLink, self.startUrl,url))
 
                     tmpOtherDomainList = reHtmlDic["otherDomains"]
 
@@ -132,6 +133,7 @@ class UrlScrapyThreading(QThread):
             reDic["status"] = status
             reDic["title"] = title
             reDic["contentLength"] = len(content)
+            reDic["content"] = content
             reDic["linkList"] = reLinkList
             reDic["sensiveInfoList"] = sensiveInfoList
             reDic["otherDomainList"] = finalOtherDomainList
@@ -143,13 +145,12 @@ class UrlScrapyThreading(QThread):
 
     # 分析一个Html页面，提取其中的URI及URL
     # 返回一个，字典结构为：{"url":[URL数组],"otherDomains":[其他域名数组]}
-    def analysisHtmlPage(self, pageUrl="", pageContent="", unvisitInterfaceUri=[]):
+    def analysisHtmlPage(self, pageUrl="", pageContent="", unvisitInterfaceUri=[],crawlerUrl="",extraUrlArr=[]):
         reDic = {}
         reUrlList = []
         reOtherDomainList = []
 
-        # 获得当前URL的域名值
-        nowDomain = myUtils.getUrlDomain(pageUrl)
+        nowUesdDomainList = myUtils.getAllUseDomainList(crawlerUrl,pageUrl,self.startUrl,extraUrlArr)
 
         totalUrlList = []
         totalUriList = []
@@ -214,41 +215,41 @@ class UrlScrapyThreading(QThread):
 
         # 处理URL
         for tmpUrl in totalUrlList:
-            # 判断链接是否能够爬取
-            ifUnvisit = False
-            for tmpUri in unvisitInterfaceUri:
-                ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUrl, tmpUri)
+            if self.checkIfUrlSameMainDomainWithDomainList(tmpUrl,nowUesdDomainList):
+                # 爬取到的URL的主域名符合要求
+                # 判断URI是否能够爬取
+                ifUnvisit = False
+                for tmpUnvisitUri in unvisitInterfaceUri:
+                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUnvisitUri, tmpUrl)
+                    if ifUnvisit:
+                        break
+                    else:
+                        continue
                 if ifUnvisit:
-                    break
+                    continue
                 else:
-                    pass
-            if ifUnvisit:
-                continue
+                    reUrlList.append(tmpUrl)
+                    totalUriList.append(myUtils.getUrlStartWithPath(tmpUrl))
             else:
-                pass
-            # 判断是否属于爬取域名的子域名
-            if myUtils.ifSameMainDomain(nowDomain, myUtils.getUrlDomain(tmpUrl)):
-                reUrlList.append(tmpUrl)
-            else:
+                # 爬取到的URL的主域名不符合要求，加入其他域名列表
                 reOtherDomainList.append(tmpUrl)
 
         # 处理URI
         for tmpUri in totalUriList:
             # 判断链接是否能够爬取
             ifUnvisit = False
-            for tmpVisitInterfaceUri in unvisitInterfaceUri:
-                ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUri, tmpVisitInterfaceUri)
+            for tmpUnvisitUri in unvisitInterfaceUri:
+                ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUnvisitUri, tmpUri)
                 if ifUnvisit:
                     break
                 else:
-                    pass
+                    continue
             if ifUnvisit:
                 continue
             else:
                 pass
             # 将URI进行拼接
-            nowHref = urllib.parse.urljoin(pageUrl, tmpUri)
-            reUrlList.append(nowHref)
+            reUrlList += self.urlJoinUriWithPaths(tmpUri,self.startUrl,crawlerUrl,pageUrl,extraUrlArr)
 
         # 结果去重
         reUrlList = list(set(reUrlList))
@@ -260,16 +261,14 @@ class UrlScrapyThreading(QThread):
         return reDic
 
     # 分析css文件，传入一个网站域名，当前css文件地址，以及css文件的源码，需要额外拼接的URL列表，返回一个链接列表
-    def analysisCssPage(self, nowScrawlUrl="", nowUrl="", pageContent="", extraUrlArr=[], unvisitInterfaceUri=[]):
+    def analysisCssPage(self, nowCrawlerUrl="", nowUrl="", pageContent="", extraUrlArr=[], unvisitInterfaceUri=[]):
         reList = []
         reOtherDomainList = []
 
-        nowScrawlDomain = myUtils.getUrlDomain(nowScrawlUrl)
-        nowUrlDomain = myUtils.getUrlDomain(nowUrl)
-        nowStartDomain = myUtils.getUrlDomain(self.startUrl)
+        nowUesdDomainList = myUtils.getAllUseDomainList(nowCrawlerUrl,nowUrl,self.startUrl,extraUrlArr)
 
         # 解析URL函数中的参数
-        tmpUrlFuncPartern = "url([ ]*['\"](?P<uri>.+?)['\"][ ]*)"
+        tmpUrlFuncPartern = "url\([ ]*(?P<uri>.+?)[ ]*\)"
         matchUriStrList = re.findall(tmpUrlFuncPartern, pageContent)
 
         # 对提取到的URL及URI字符串进行处理
@@ -283,53 +282,40 @@ class UrlScrapyThreading(QThread):
             # 判断获取的src是否包含netloc属性（即是否为完整的http请求）
             if tmpUrlParseResult.netloc != "":
                 # 为完整的http请求
-                if myUtils.ifSameMainDomain(nowScrawlDomain, myUtils.getUrlDomain(tmpSrcStr)):
-                    # 判断链接是否能够爬取
+                # 判断是否属于爬取域名的子域名
+                if self.checkIfUrlSameMainDomainWithDomainList(tmpUriStr,nowUesdDomainList):
+                    # 判断URI是否能够爬取
                     ifUnvisit = False
-                    for tmpUri in unvisitInterfaceUri:
-                        ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUri, tmpSrcStr)
+                    for tmpUnvisitUri in unvisitInterfaceUri:
+                        ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUnvisitUri, tmpUriStr)
                         if ifUnvisit:
                             break
                         else:
-                            pass
+                            continue
                     if ifUnvisit:
                         continue
                     else:
                         reList.append(tmpSrcStr)
+                        matchUriStrList.append(myUtils.getUrlStartWithPath(tmpSrcStr))
                 else:
                     # 非爬取域名的子域名，加入其他域名列表
                     reOtherDomainList.append(tmpSrcStr)
             else:
                 # 不是完整的http请求
-                link = tmpUriStr.strip()
                 # 判断链接是否能够爬取
                 ifUnvisit = False
-                for tmpVisitInterfaceUri in unvisitInterfaceUri:
-                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(link, tmpVisitInterfaceUri)
+                for tmpUnvisitUri in unvisitInterfaceUri:
+                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUnvisitUri, tmpUriStr)
                     if ifUnvisit:
                         break
                     else:
-                        pass
+                        continue
                 if ifUnvisit:
                     continue
                 else:
                     pass
-                # 与当前输入网站域名结合
-                reList.append(urllib.parse.urljoin(nowScrawlDomain, link))
-                # 与当前输入网站URL结合
-                reList.append(urllib.parse.urljoin(myUtils.getUrlWithoutFile(nowScrawlUrl), link))
-                # 与开始输入网站域名相结合
-                reList.append(urllib.parse.urljoin(nowStartDomain, link))
-                # 与当前输入网站URL结合
-                reList.append(urllib.parse.urljoin(myUtils.getUrlWithoutFile(self.startUrl), link))
-                # 与js文件域名结合
-                reList.append(urllib.parse.urljoin(nowUrlDomain, link))
-                # 与js文件地址结合
-                reList.append(urllib.parse.urljoin(myUtils.getUrlWithoutFile(nowUrl), link))
-                # 与额外传入的URL地址结合
-                for nowExtraUrl in extraUrlArr:
-                    reList.append(urllib.parse.urljoin(nowExtraUrl, link))
-                    reList.append(myUtils.joinUrl(nowExtraUrl, link))
+                # 拼接URI
+                reList += self.urlJoinUriWithPaths(tmpUriStr, self.startUrl, nowCrawlerUrl, nowUrl, extraUrlArr)
 
         # 去重
         reList = list(set(reList))
@@ -337,13 +323,12 @@ class UrlScrapyThreading(QThread):
         return reList, reOtherDomainList
 
     # 分析js文件，传入一个网站域名，当前js文件地址，以及js文件的源码，需要额外拼接的URL列表，返回一个链接列表
-    def analysisJSPage(self, nowScrawlUrl="", nowUrl="", pageContent="", extraUrlArr=[], unvisitInterfaceUri=[]):
+    def analysisJSPage(self, nowCrawlerUrl="", nowUrl="", pageContent="", extraUrlArr=[], unvisitInterfaceUri=[]):
         reList = []
         reOtherDomainList = []
 
-        nowScrawlDomain = myUtils.getUrlDomain(nowScrawlUrl)
-        nowUrlDomain = myUtils.getUrlDomain(nowUrl)
-        nowStartDomain = myUtils.getUrlDomain(self.startUrl)
+        nowUesdDomainList = myUtils.getAllUseDomainList(nowCrawlerUrl,nowUrl,self.startUrl,extraUrlArr)
+
         # 提取所有符合URL格式的字符串
         extractUrlsResults = list(set(myUtils.extractUrls(pageContent)))
         extractUrlsResults = sorted(extractUrlsResults, key=lambda uri: len(uri), reverse=True)
@@ -356,9 +341,9 @@ class UrlScrapyThreading(QThread):
         extractSpecilUrisResults = list(set(myUtils.extractSpecilUris(pageContent)))
         extractSpecilUrisResults = sorted(extractSpecilUrisResults, key=lambda uri: len(uri), reverse=True)
         # 从响应文本中替换所有匹配到的特殊URI
-        for tmpUri in extractSpecilUrisResults:
-            while pageContent.find(tmpUri) != -1:
-                pageContent = pageContent.replace(tmpUri, "")
+        for tmpUnvisitUri in extractSpecilUrisResults:
+            while pageContent.find(tmpUnvisitUri) != -1:
+                pageContent = pageContent.replace(tmpUnvisitUri, "")
 
         # 提取URI
         extractUrisResults = list(set(myUtils.extractUris(pageContent)))
@@ -372,54 +357,41 @@ class UrlScrapyThreading(QThread):
         # 处理URL
         # 判断是否属于爬取域名的子域名
         for tmpUrl in extractUrlsResults:
-            if myUtils.ifSameMainDomain(nowScrawlDomain, myUtils.getUrlDomain(tmpUrl)):
-                # 判断链接是否能够爬取
+            if self.checkIfUrlSameMainDomainWithDomainList(tmpUrl,nowUesdDomainList):
+                # 爬取到的URL的主域名符合要求
+                # 判断URI是否能够爬取
                 ifUnvisit = False
-                for tmpUri in unvisitInterfaceUri:
-                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUri, tmpUrl)
+                for tmpUnvisitUri in unvisitInterfaceUri:
+                    ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUnvisitUri, tmpUrl)
                     if ifUnvisit:
                         break
                     else:
-                        pass
+                        continue
                 if ifUnvisit:
                     continue
                 else:
                     reList.append(tmpUrl)
+                    extractUrisResults.append(myUtils.getUrlStartWithPath(tmpUrl))
             else:
-                # 非爬取域名的子域名，加入其他域名列表
+                # 爬取到的URL的主域名不符合要求，加入其他域名列表
                 reOtherDomainList.append(tmpUrl)
 
         # 处理URI
         for tmpUri in extractUrisResults:
-            link = tmpUri
-            # 判断链接是否能够爬取
+            # 判断URI是否能够爬取
             ifUnvisit = False
-            for tmpVisitInterfaceUri in unvisitInterfaceUri:
-                ifUnvisit = ifUnvisit or myUtils.ifSameUri(link, tmpVisitInterfaceUri)
+            for tmpUnvisitUri in unvisitInterfaceUri:
+                ifUnvisit = ifUnvisit or myUtils.ifSameUri(tmpUnvisitUri, tmpUri)
                 if ifUnvisit:
                     break
                 else:
-                    pass
+                    continue
             if ifUnvisit:
                 continue
             else:
                 pass
-            # 与当前输入网站域名结合
-            reList.append(urllib.parse.urljoin(nowScrawlDomain, link))
-            # 与当前输入网站URL结合
-            reList.append(urllib.parse.urljoin(myUtils.getUrlWithoutFile(nowScrawlUrl), link))
-            # 与开始输入网站域名相结合
-            reList.append(urllib.parse.urljoin(nowStartDomain, link))
-            # 与当前输入网站URL结合
-            reList.append(urllib.parse.urljoin(myUtils.getUrlWithoutFile(self.startUrl), link))
-            # 与js文件域名结合
-            reList.append(urllib.parse.urljoin(nowUrlDomain, link))
-            # 与js文件地址结合
-            reList.append(urllib.parse.urljoin(myUtils.getUrlWithoutFile(nowUrl), link))
-            # 与额外传入的URL地址结合
-            for nowExtraUrl in extraUrlArr:
-                reList.append(urllib.parse.urljoin(nowExtraUrl, link))
-                reList.append(myUtils.joinUrl(nowExtraUrl, link))
+            # 拼接URI
+            reList += self.urlJoinUriWithPaths(tmpUri, self.startUrl, nowCrawlerUrl, nowUrl, extraUrlArr)
 
         # 去重
         reList = list(set(reList))
@@ -455,3 +427,47 @@ class UrlScrapyThreading(QThread):
                     pass
 
         return reList
+
+    def urlJoinUriWithPaths(self,uri,startUrl,crawlerUrl,fileUrl,extraUrlList):
+        reUrlList = []
+        # 与开始URL的域名部分结合
+        reUrlList.append(myUtils.joinUrl(myUtils.getUrlDomain(startUrl), uri))
+        # 与开始URL的目录部分结合（即不包含文件名部分）
+        reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutFilePath(startUrl), uri))
+        # 强制去除URL的最后一级内容，并与URI结合
+        reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutLastPath(startUrl), uri))
+        # 与来源URL的域名部分结合
+        reUrlList.append(myUtils.joinUrl(myUtils.getUrlDomain(crawlerUrl), uri))
+        # 与来源URL的目录部分结合（即不包含文件名部分）
+        reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutFilePath(crawlerUrl), uri))
+        # 强制去除URL的最后一级内容，并与URI结合
+        reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutLastPath(crawlerUrl), uri))
+        # 与文件URL的域名部分结合
+        reUrlList.append(myUtils.joinUrl(myUtils.getUrlDomain(fileUrl), uri))
+        # 与文件URL的目录部分结合（即不包含文件名部分）
+        reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutFilePath(fileUrl), uri))
+        # 强制去除URL的最后一级内容，并与URI结合
+        reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutLastPath(fileUrl), uri))
+        # 与额外传入的URL地址结合
+        for nowExtraUrl in extraUrlList:
+            # 与额外传入的URL的域名部分结合
+            reUrlList.append(myUtils.joinUrl(myUtils.getUrlDomain(nowExtraUrl), uri))
+            # 与额外传入的URL的目录部分结合（即不包含文件名部分）
+            reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutFilePath(nowExtraUrl), uri))
+            # 强制去除URL的最后一级内容，并与URI结合
+            reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutLastPath(nowExtraUrl), uri))
+        # 将结果去重
+        reUrlList = list(set(reUrlList))
+        return reUrlList
+
+    def checkIfUrlSameMainDomainWithDomainList(self,url,domainList):
+        ifSameFlag = True
+        tmpUrlDomain = myUtils.getUrlOnlyDomain(url)
+        for tmpDomain in domainList:
+            if not myUtils.ifSameMainDomain(tmpUrlDomain,tmpDomain):
+                ifSameFlag = False
+                break
+            else:
+                continue
+        return ifSameFlag
+

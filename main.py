@@ -4,6 +4,7 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 import warnings
 
 from PyQt5.QtCore import QDir
@@ -160,7 +161,7 @@ class Main(QWidget, Ui_Main_Form):
             reFlag = self.ifResultFilter(dataDic, reConfDic["filterList"])
             if reFlag:
                 # 设置状态列
-                self.tableWidget.item(index, 4).setText("0")
+                self.tableWidget.item(index, 5).setText("0")
                 # 设置当前行的背景色
                 for colIndex in range(self.tableWidget.columnCount()):
                     self.tableWidget.item(index, colIndex).setBackground(QBrush(QColor(136, 136, 136)))
@@ -172,7 +173,7 @@ class Main(QWidget, Ui_Main_Form):
                 self.tableWidget.setRowHidden(index, ifHidden)
             else:
                 # 设置状态列
-                self.tableWidget.item(index, 4).setText("1")
+                self.tableWidget.item(index, 5).setText("1")
                 # 设置当前行的背景色
                 for colIndex in range(self.tableWidget.columnCount()):
                     self.tableWidget.item(index, colIndex).setBackground(QBrush(QColor(255, 255, 255)))
@@ -265,7 +266,7 @@ class Main(QWidget, Ui_Main_Form):
             pass
 
         # 读取不爬取接口
-        nowUnvisitInterfaceUri = [a for a in self.unvisitInterfaceUriTextEdit.toPlainText().split("\n") if a != ""]
+        nowUnvisitInterfaceUri = [urllib.parse.urlparse(a).path for a in self.unvisitInterfaceUriTextEdit.toPlainText().split("\n") if a != ""]
 
         # 读取User-Agent
         nowUserAgent = self.userAgentValTextEdit.toPlainText().strip()

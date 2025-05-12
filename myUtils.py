@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 import datetime
+import hashlib
 import json
 import os
 import random
@@ -119,71 +120,6 @@ def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readT
     return resDic
 
 
-# 访问URL,type表示请求类型，0为GET，1为POST，2为PUT
-# 返回值类型如下：
-# {
-# "url":传入URL,
-# "resultStr":访问结果字符串,
-# "checkFlag":标志是否访问成功的布尔类型变量,
-# "title":访问成功时的页面标题,
-# "pageContent":访问成功时的页面源码，
-# "status":访问的响应码
-# }
-# def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readTimeout=10, proxies=None):
-#     resDic = {}
-#     url = url.strip()
-#
-#     resultStr = ""
-#     checkedFlag = False
-#     status = ""
-#     title = ""
-#     pageContent = ""
-#     reContent = ""
-#     timeout = (reqTimeout, readTimeout)
-#     header = header if header != {} else {
-#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
-#     }
-#
-#     try:
-#         if type == 0:
-#             response = requests.get(url, headers=header, verify=False, cookies=cookie, timeout=timeout, proxies=proxies)
-#         elif type == 1:
-#             response = requests.post(url, headers=header, verify=False, cookies=cookie, data=data, timeout=timeout,
-#                                      proxies=proxies)
-#         elif type == 2:
-#             response = requests.put(url, headers=header, verify=False, cookies=cookie, data=data, timeout=timeout,
-#                                     proxies=proxies)
-#         else:
-#             pass
-#         status = response.status_code
-#         if str(status)[0] == "2" or str(status)[0] == "3":
-#             # 获得页面编码
-#             pageEncoding = response.apparent_encoding
-#             # 设置页面编码
-#             response.encoding = pageEncoding
-#             # 获得页面内容
-#             reContent = response.text
-#             soup = BeautifulSoup(reContent, "lxml")
-#             title = "成功访问，但无法获得标题" if not soup.title else soup.title.string
-#             resultStr = "验证成功，标题为：{0}".format(title)
-#             checkedFlag = True
-#         else:
-#             resultStr = "验证失败，状态码为{0}".format(status)
-#             checkedFlag = False
-#     except Exception as e:
-#         resultStr = str(e)
-#         checkedFlag = False
-#
-#     # 构建返回结果
-#     resDic["url"] = url
-#     resDic["resultStr"] = resultStr
-#     resDic["checkFlag"] = checkedFlag
-#     resDic["title"] = title
-#     resDic["status"] = status
-#     resDic["pageContent"] = reContent
-#     return resDic
-
-
 # 判断该字符串是否是IP，返回一个布尔值
 def ifIp(matchStr):
     reFlag = True
@@ -195,78 +131,110 @@ def ifIp(matchStr):
     return reFlag
 
 
-# 从URL中提取协议+域名部分
+# 从URL中提取协议+域名（端口）部分
 def getUrlDomain(url):
-    try:
-        urlObj = urllib.parse.urlsplit(url)
-        domain = urllib.parse.urlunsplit(tuple(list(urlObj[:2]) + [""] * 3))
-    except:
-        domain = "0.0.0." + str(random.randint(0, 254))
-    return domain
+    reDomainStr = ""
+    urlObj = urllib.parse.urlsplit(url)
+    tmpDomain = urlObj.netloc
+    if tmpDomain != "":
+        reDomainStr = urllib.parse.urlunsplit(tuple(list(urlObj[:2]) + [""] * 3))
+    else:
+        pass
+    return reDomainStr
 
 # 从URL中提取域名部分
 def getUrlOnlyDomain(url):
-    try:
-        urlObj = urllib.parse.urlsplit(url)
-        domain = urlObj[1]
-        # 去除端口号
-        tmpPortStartIndex = domain.find(":")
-        if tmpPortStartIndex!=-1:
-            domain = domain[:tmpPortStartIndex]
-    except:
-        domain = "0.0.0." + str(random.randint(0, 254))
-    return domain
-
-
-# 从URL中提取协议+域名+path部分
-def getUrlWithoutFile(url):
+    reDomainStr = ""
     urlObj = urllib.parse.urlsplit(url)
-    domain = urllib.parse.urlunsplit(tuple(list(urlObj[:3]) + [""] * 2))
-    domainList = domain.split("/")
-    if "." in domainList[-1]:
-        domainList = domainList[:-1]
+    tmpDomain = urlObj.netloc
+    if tmpDomain != "":
+        # 去除端口号
+        tmpPortStartIndex = tmpDomain.find(":")
+        if tmpPortStartIndex!=-1:
+            reDomainStr = tmpDomain[:tmpPortStartIndex]
+        else:
+            reDomainStr = tmpDomain
     else:
         pass
-    domain = "/".join(domainList)
-    return domain
+    return reDomainStr
+
+# 从URL中提取主域名部分（例：test1.test2.maindomain.com 的主域名为 maindomain.com）,IP会直接返回整个IP
+def getUrlMainDomain(url):
+    reDomainStr = ""
+    tmpDomainStr = getUrlOnlyDomain(url)
+    if tmpDomainStr.count(".") < 2:
+        reDomainStr = tmpDomainStr
+    else:
+        reDomainStr = ".".join(tmpDomainStr.split(".")[-2:])
+    return reDomainStr
+
+# 从URL中提取协议+域名+path部分(不包含文件名或最后一个路径)
+def getUrlWithoutLastPath(url):
+    reUrlStr = ""
+    urlObj = urllib.parse.urlsplit(url)
+    tmpPath = urlObj.path
+    tmpSolvedPath = "/".join(tmpPath.split("/")[:-1])
+
+    reUrlStr = urllib.parse.urlunsplit(tuple(list(urlObj[:2])+[tmpSolvedPath] + [""] * 2))
+
+    return reUrlStr
+
+# 若URL以.xx结尾，则去除访问文件，只返回目录，否则直接返回
+def getUrlWithoutFilePath(url):
+    reUrlStr = ""
+    urlObj = urllib.parse.urlsplit(url)
+    tmpPath = urlObj.path
+    tmpSolvedPath = "/".join(tmpPath.split("/")[:-1])
+    tmpUrlFileName = tmpPath.split("/")[-1]
+    if tmpUrlFileName.find(".")!=-1:
+        reUrlStr = urllib.parse.urlunsplit(tuple(list(urlObj[:2]) + [tmpSolvedPath] + [""] * 2))
+    else:
+        reUrlStr = urllib.parse.urlunsplit(tuple(list(urlObj[:3])+ [""] * 2))
+
+    return reUrlStr
+
+# 返回URL的path及之后字符串
+def getUrlStartWithPath(url):
+    reUrlStr = ""
+    urlObj = urllib.parse.urlsplit(url)
+    reUrlStr = urllib.parse.urlunsplit(tuple([""]*2+list(urlObj[2:])))
+    return reUrlStr
 
 
 # 判断两个域名是否属于同一主域名，如果两者都是IP则比较是否完全相同，
 # 返回一个布尔值,属于返回True,否则返回False
 def ifSameMainDomain(domain1, domain2):
-    reFlag = True
-    domainArr = [domain1, domain2]
-    if ifIp(domain1) != ifIp(domain2):
-        # 判断是否是IP和域名比较
-        reFlag = False
-    elif ifIp(domain1) and ifIp(domain2):
-        # 两个参数都是IP
-        reFlag = (domain1 == domain2)
-    else:
-        # 两个参数都是域名
-        # 去除端口号
-        for index, nowDomain in enumerate(domainArr):
-            tempPort = nowDomain.split(":")[-1]
-            if tempPort.isdigit():
-                # 去除端口号
-                nowDomain = ":".join(nowDomain.split(":")[:-1])
-                domainArr[index] = nowDomain
-            else:
-                pass
+    domain1 = domain1.strip()
+    domain2 = domain2.strip()
 
-        # 判断主域名是否相同
-        tempMainDomain = ".".join(domainArr[0].split(".")[-2:])
-        for nowDomain in domainArr:
-            if ".".join(nowDomain.split(".")[-2:]) != tempMainDomain:
-                reFlag = False
+    if ifIp(domain1) and ifIp(domain2):
+        # 两者都是IP，比较是否完全相同
+        reFlag = (domain1 == domain2)
+    elif (not ifIp(domain1)) and (not ifIp(domain2)):
+        # 两个参数都是域名
+        tmpMainDomainStr1 = getUrlMainDomain(domain1)
+        tmpMainDomainStr2 = getUrlMainDomain(domain2)
+        reFlag = (tmpMainDomainStr1 == tmpMainDomainStr2)
+    else:
+        # 两者类型不同，认为不同
+        reFlag = False
     return reFlag
 
 
 # 从URL中提取文件后缀名
 def getUrlFileSuffix(url):
     reSuffix = ""
+    url = url.strip("/")
+
+
     tmpUrlParseResult = urllib.parse.urlparse(url)
-    reSuffix = tmpUrlParseResult.path.split(".")[-1].strip().lower()
+    tmpPath = tmpUrlParseResult.path
+    tmpUrlFilePath = tmpPath.split("/")[-1]
+    if tmpUrlFilePath.find(".")!=-1:
+        reSuffix = tmpUrlFilePath.split(".")[-1].strip().lower()
+    else:
+        reSuffix = ""
+
     return reSuffix
 
 
@@ -459,12 +427,28 @@ def readConfFile(filePath):
 
 def joinUrl(mainUrl, link):
     completeUrl = ""
-    if mainUrl[-1] == "/":
-        mainUrl = mainUrl[:-1]
-    else:
-        if link[0] != "/":
-            link = "/" + link
-    completeUrl = mainUrl + link
+
+    tmpMainUrlSplitedObj = urllib.parse.urlsplit(mainUrl)
+    tmpMainUri = tmpMainUrlSplitedObj.path
+    tmpMainUrlDomainStr = getUrlDomain(mainUrl)
+    if tmpMainUri != "" and tmpMainUri[-1]!="/":
+        tmpMainUri += "/"
+    if link.startswith("/"):
+        link = link[1:]
+
+    tmpArgStr = ""
+    tmpFindIndex = link.find("?")
+    tmpUriStr = link
+    if tmpFindIndex != -1:
+        tmpArgStr = link[tmpFindIndex:]
+        tmpUriStr = link[:tmpFindIndex]
+    tmpUriStr = urllib.parse.urljoin("/",tmpMainUri+tmpUriStr)
+    tmpUriStr += tmpArgStr
+    if tmpMainUrlDomainStr[-1] == "/":
+        tmpMainUrlDomainStr = tmpMainUrlDomainStr[:-1]
+    if tmpUriStr != "" and tmpUriStr[0]!="/":
+        tmpUriStr = "/" + tmpUriStr
+    completeUrl = tmpMainUrlDomainStr + tmpUriStr
     return completeUrl
 
 
@@ -483,14 +467,11 @@ def connectIpPort(ip, port):
 # 判断URL最后的URI是否与输入的相同
 def ifSameUri(uri, url):
     reFlag = False
-    # 对传入的参数进行URL解码
-    uri = urllib.parse.unquote(uri)
-    url = urllib.parse.unquote(url)
-    splitUrl = url[-1 * len(uri):]
-    if uri == splitUrl:
-        reFlag = True
-    else:
-        reFlag = False
+
+    uri = uri.strip("/")
+    urlUri = urllib.parse.urlparse(url).path.strip("/")
+
+    reFlag = (uri==urlUri)
     return reFlag
 
 # 传入一个URL，去除该URL参数的值，返回类似：http:domain:port/a1=&a2= 的字符串
@@ -674,3 +655,27 @@ def solveExtractedUrls(urlList):
         urlList[tmpIndex] = urllib.parse.unquote(urlList[tmpIndex])
 
     return urlList
+
+def getAllUseDomainList(crawlerUrl,fileUrl,startUrl,extraUrlArr):
+    reDomainList = []
+    reDomainList.append(getUrlOnlyDomain(crawlerUrl))
+    reDomainList.append(getUrlOnlyDomain(fileUrl))
+    reDomainList.append(getUrlOnlyDomain(startUrl))
+    for tmpExtraUrl in extraUrlArr:
+        reDomainList.append(getUrlOnlyDomain(tmpExtraUrl))
+
+    reDomainList = list(set(reDomainList))
+    return reDomainList
+
+def calcResponseHash(responseData, algorithm: str = 'md5') -> str:
+    # 获取响应数据的bytes类型
+    if type(responseData) == bytes:
+        responseData = responseData
+    elif type(responseData) == str:
+        responseData = responseData.encode("utf-8")
+    else:
+        responseData = str(responseData).encode("utf-8")
+    """计算数据的哈希值，默认使用MD5"""
+    hasher = hashlib.new(algorithm)
+    hasher.update(responseData)
+    return hasher.hexdigest()
