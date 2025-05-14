@@ -220,6 +220,60 @@ def ifSameMainDomain(domain1, domain2):
         reFlag = False
     return reFlag
 
+def splitUrlStr(urlStr,defaultIfHttpsBool=False):
+    reDict = {}
+    reDict["ifHttpsBool"] = False
+    reDict["host"] = ""
+    reDict["port"] = ""
+    reDict["uri"] = ""
+    reDict["queryStr"] = ""
+
+    tmpUrlParseObj = urllib.parse.urlparse(urlStr)
+    tmpIfHttpsBool = False
+    if tmpUrlParseObj.scheme == "":
+        tmpIfHttpsBool = defaultIfHttpsBool
+    else:
+        tmpIfHttpsBool = (tmpUrlParseObj.scheme == "https")
+    reDict["ifHttpsBool"] = tmpIfHttpsBool
+    reDict["uri"] = tmpUrlParseObj.path.lstrip("/")
+
+    # 解析主机和端口
+    tmpNetloc = tmpUrlParseObj.netloc
+    ifGetPortFlag = False
+    if ":" in tmpNetloc:
+        tmpSplitList = tmpNetloc.split(":")
+        if len(tmpSplitList) == 2:
+            ifGetPortFlag = True
+            reDict["host"] = tmpSplitList[0].strip()
+            reDict["port"] = tmpSplitList[1].strip()
+        else:
+            pass
+    else:
+        pass
+
+    if not ifGetPortFlag:
+        # 根据协议设置默认端口
+        reDict["host"] = tmpNetloc
+        if reDict["ifHttpsBool"]:
+            reDict["port"] = "443"
+        else:
+            reDict["port"] = "80"
+
+    # 解析请求参数
+    reDict["reqData"] = tmpUrlParseObj.query
+
+    return reDict
+
+# 判断两个URL的domain部分（域名/IP+端口）是否完全相同，
+# 返回一个布尔值,相同返回True,否则返回False
+def ifSameDomainWithTwoUrl(url1,url2):
+    tmpUrl1SplitedDict = splitUrlStr(url1)
+    tmpUrl2SplitedDict = splitUrlStr(url2)
+
+    tmpCheckDomainStr1 = f"{'https' if tmpUrl1SplitedDict['ifHttpsBool'] else 'http'}://{tmpUrl1SplitedDict['host']}:{tmpUrl1SplitedDict['port']}"
+    tmpCheckDomainStr2 = f"{'https' if tmpUrl2SplitedDict['ifHttpsBool'] else 'http'}://{tmpUrl2SplitedDict['host']}:{tmpUrl2SplitedDict['port']}"
+
+    return (tmpCheckDomainStr1==tmpCheckDomainStr2)
 
 # 从URL中提取文件后缀名
 def getUrlFileSuffix(url):
@@ -444,7 +498,7 @@ def joinUrl(mainUrl, link):
         tmpUriStr = link[:tmpFindIndex]
     tmpUriStr = urllib.parse.urljoin("/",tmpMainUri+tmpUriStr)
     tmpUriStr += tmpArgStr
-    if tmpMainUrlDomainStr[-1] == "/":
+    if tmpMainUrlDomainStr != "" and tmpMainUrlDomainStr[-1] == "/":
         tmpMainUrlDomainStr = tmpMainUrlDomainStr[:-1]
     if tmpUriStr != "" and tmpUriStr[0]!="/":
         tmpUriStr = "/" + tmpUriStr
@@ -562,7 +616,7 @@ def extractUrls(text):
                 (?:[^:@/]+(?::[^@/]*)?@)?  # 用户名密码
                 (?:
                     (?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}  # 域名
-                    | (?:\d{1,3}\. ){3}\d{1,3}       # IPv4地址
+                    | (?:\d{1,3}\.){3}\d{1,3}       # IPv4地址
                 )
                 (?::\d+)?           # 端口号
                 (?:
@@ -586,6 +640,7 @@ def extractUris(text):
     pattern = re.compile(r"""
                 (?i)                # 忽略大小写
                 (?<![<])
+                [.]*                # 匹配相对路径
                 (?:
                     (?:/|%2F|(?:\\u002F))[a-zA-Z0-9-._~%@#]+     # 路径及片段
                 )+
@@ -636,12 +691,6 @@ def extractSpecilUris(text):
         for tmpStripChar in tmpStripChars:
             tmpMatchStrList = [s.strip(tmpStripChar) for s in tmpMatchStrList]
         firstSearchList += tmpMatchStrList
-
-    # # 判断指定字符包裹的字符串是否符合URI特征
-    # reList = []
-    # for tmpSearchStr in firstSearchList:
-    #     if uriPattern.match(tmpSearchStr):
-    #         reList.append(tmpSearchStr)
     return firstSearchList
 
 def solveExtractedUrls(urlList):
@@ -653,6 +702,11 @@ def solveExtractedUrls(urlList):
 
         # 进行一次URL解码
         urlList[tmpIndex] = urllib.parse.unquote(urlList[tmpIndex])
+
+        # 判断url是否包含协议头
+        tmpSplitedObj = urllib.parse.urlsplit(tmpUrl)
+        if tmpSplitedObj.netloc!="" and tmpSplitedObj.scheme == "":
+            urlList[tmpIndex] = urllib.parse.urlunsplit(tuple(["http"] + list(tmpSplitedObj[1:])))
 
     return urlList
 

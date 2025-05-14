@@ -118,9 +118,9 @@ class UrlScrapyManage(QThread):
                     tempLink = tempLinkItem[0]
                     tempStartLink = tempLinkItem[1]
                     tempCrawlerUrl = tempLinkItem[2]
-                    tempLinkWithoutArgValue = myUtils.parseUrlWithoutArgsValue(tempLinkItem[0])
-                    if tempLinkWithoutArgValue not in self.vistedLinkList:
-                        self.vistedLinkList.append(tempLinkWithoutArgValue)
+                    # tempLinkWithoutArgValue = myUtils.parseUrlWithoutArgsValue(tempLinkItem[0])
+                    if tempLink not in self.vistedLinkList:
+                        self.vistedLinkList.append(tempLink)
                         self.urlQueue.put((tempLink, tempStartLink,tempCrawlerUrl))
                     else:
                         pass

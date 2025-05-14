@@ -173,7 +173,17 @@ class UrlScrapyThreading(QThread):
             while pageContent.find(tmpUrl) != -1:
                 pageContent = pageContent.replace(tmpUrl, "")
 
-        regexResultList = regexScriptResultList+regexLinkResultList
+        # 使用正则匹配所有a标签，提取其中的href属性
+        regexStr = "<a[ /]+?[^>]*?href[ ]*?=[ ]*?['|\"](?P<hrefUrl>.+?)['|\"].*?>"
+        regexAResultList = re.findall(regexStr, pageContent, re.I)
+        regexAResultList = [u for u in regexAResultList if not (u.startswith("javascript:") or u == "#")]
+        regexAResultList = sorted(regexAResultList, key=lambda uri: len(uri), reverse=True)
+        # 从响应文本中替换所有匹配到的URL
+        for tmpUrl in regexAResultList:
+            while pageContent.find(tmpUrl) != -1:
+                pageContent = pageContent.replace(tmpUrl, "")
+
+        regexResultList = regexScriptResultList+regexLinkResultList+regexAResultList
 
         # 处理正则获取的URL
         for tmpSrcStr in regexResultList:
@@ -215,6 +225,7 @@ class UrlScrapyThreading(QThread):
 
         # 处理URL
         for tmpUrl in totalUrlList:
+
             if self.checkIfUrlSameMainDomainWithDomainList(tmpUrl,nowUesdDomainList):
                 # 爬取到的URL的主域名符合要求
                 # 判断URI是否能够爬取
@@ -436,18 +447,22 @@ class UrlScrapyThreading(QThread):
         reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutFilePath(startUrl), uri))
         # 强制去除URL的最后一级内容，并与URI结合
         reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutLastPath(startUrl), uri))
-        # 与来源URL的域名部分结合
-        reUrlList.append(myUtils.joinUrl(myUtils.getUrlDomain(crawlerUrl), uri))
-        # 与来源URL的目录部分结合（即不包含文件名部分）
-        reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutFilePath(crawlerUrl), uri))
-        # 强制去除URL的最后一级内容，并与URI结合
-        reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutLastPath(crawlerUrl), uri))
-        # 与文件URL的域名部分结合
-        reUrlList.append(myUtils.joinUrl(myUtils.getUrlDomain(fileUrl), uri))
-        # 与文件URL的目录部分结合（即不包含文件名部分）
-        reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutFilePath(fileUrl), uri))
-        # 强制去除URL的最后一级内容，并与URI结合
-        reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutLastPath(fileUrl), uri))
+        # 判断来源URL与开始URL的域名+端口是否相同
+        if myUtils.ifSameDomainWithTwoUrl(crawlerUrl,startUrl):
+            # 与来源URL的域名部分结合
+            reUrlList.append(myUtils.joinUrl(myUtils.getUrlDomain(crawlerUrl), uri))
+            # 与来源URL的目录部分结合（即不包含文件名部分）
+            reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutFilePath(crawlerUrl), uri))
+            # 强制去除URL的最后一级内容，并与URI结合
+            reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutLastPath(crawlerUrl), uri))
+        # 判断文件URL与开始URL的域名+端口是否相同
+        if myUtils.ifSameDomainWithTwoUrl(fileUrl, startUrl):
+            # 与文件URL的域名部分结合
+            reUrlList.append(myUtils.joinUrl(myUtils.getUrlDomain(fileUrl), uri))
+            # 与文件URL的目录部分结合（即不包含文件名部分）
+            reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutFilePath(fileUrl), uri))
+            # 强制去除URL的最后一级内容，并与URI结合
+            reUrlList.append(myUtils.joinUrl(myUtils.getUrlWithoutLastPath(fileUrl), uri))
         # 与额外传入的URL地址结合
         for nowExtraUrl in extraUrlList:
             # 与额外传入的URL的域名部分结合
