@@ -4,7 +4,6 @@ import datetime
 import hashlib
 import json
 import os
-import random
 import re
 import socket
 import urllib.parse
@@ -16,6 +15,22 @@ from openpyxl.styles import Border, Side, Font, PatternFill
 
 # 全局变量区域
 borderNumDic = {-1: None, 0: "thin"}
+STATUS_REASONS = {
+        "200": "OK",
+        "201": "Created",
+        "202": "Accepted",
+        "204": "No Content",
+        "301": "Moved Permanently",
+        "302": "Found",
+        "304": "Not Modified",
+        "400": "Bad Request",
+        "401": "Unauthorized",
+        "403": "Forbidden",
+        "404": "Not Found",
+        "405": "Method Not Allowed",
+        "500": "Internal Server Error",
+        "503": "Service Unavailable",
+    }
 
 # 获得一个用于模拟浏览器的header
 def getBrowerHeader():
@@ -96,12 +111,12 @@ def requestsUrl(url, cookie={}, header={}, data={}, type=0, reqTimeout=10, readT
             title = findHtmlTitleWithContent(reContent)
             resultStr = "验证成功，标题为：{0}".format(title)
             checkedFlag = True
-        elif str(status)[0] == "4":
-            title = "404 Not Found"
-            resultStr = "请求资源不存在"
+        elif str(status).strip() in STATUS_REASONS.keys():
+            title = STATUS_REASONS.get(str(status).strip(), "未知响应码")
+            resultStr = "状态码为{0}".format(status)
             checkedFlag = True
         else:
-            resultStr = "验证失败，状态码为{0}".format(status)
+            resultStr = "异常状态码：{0}".format(status)
             checkedFlag = False
     except Exception as e:
         resultStr = str(e)
@@ -176,6 +191,14 @@ def getUrlWithoutLastPath(url):
     tmpSolvedPath = "/".join(tmpPath.split("/")[:-1])
 
     reUrlStr = urllib.parse.urlunsplit(tuple(list(urlObj[:2])+[tmpSolvedPath] + [""] * 2))
+
+    return reUrlStr
+
+def getUrlWithoutQuery(url):
+    reUrlStr = ""
+    urlObj = urllib.parse.urlsplit(url)
+
+    reUrlStr = urllib.parse.urlunsplit(tuple(list(urlObj[:3]) + [""] * 2))
 
     return reUrlStr
 
@@ -659,39 +682,21 @@ def extractSpecilUris(text):
     从文本中提取特殊URI（被指定字符包裹，不以/开头，但符合URI格式），包裹字符包括：
     1、引号（单双引号）
     """
-    uriPattern = r"""
-                (?:
-                    [a-zA-Z0-9-\._~%@#]+(?:/|%2F|(?:\\u002F))     # 路径及片段
-                )
-                (?:
-                    [a-zA-Z0-9-\._~%@#]+(?:/|%2F|(?:\\u002F))*     # 路径及片段
-                )+
-                (?:
-                    \?(?:[a-zA-Z0-9-\._~%@&=+/]|(?:\\u002F))+
-                )*     # 查询参数
-    """
+    uriPattern = re.compile(r"""
+            (?i)                # 忽略大小写
+            ['\"]
+            (
+                [a-zA-Z0-9-._~%@#]*
+                (?:/|%2F|(?:\\u002F)|\?)+
+                .*?
+            )
+            ['\"]
+        """, re.VERBOSE)
 
+    tmpMatchStrList = [u.strip() for u in uriPattern.findall(text) if
+                       u.strip() not in ["/", "?", "%2F", "%2f", "\\u002F", "\\u002f"]]
 
-    startCharsList = []
-    startCharsList.append({"chars":['"','"'],"stripChars":['"']})
-    startCharsList.append({"chars":["'","'"],"stripChars":["'"]})
-
-    patternList = []
-
-    for tmpStartCharsDict in startCharsList:
-        pattern = re.compile(r"(?i)"+tmpStartCharsDict["chars"][0]+uriPattern+tmpStartCharsDict["chars"][1], re.VERBOSE)
-        patternList.append({"pattern":pattern,"stripChars":tmpStartCharsDict["stripChars"]})
-
-    # 匹配所有被指定字符包裹的字符串
-    firstSearchList = []
-
-    for tmpPatternDict in patternList:
-        tmpMatchStrList = tmpPatternDict["pattern"].findall(text)
-        tmpStripChars = tmpPatternDict["stripChars"]
-        for tmpStripChar in tmpStripChars:
-            tmpMatchStrList = [s.strip(tmpStripChar) for s in tmpMatchStrList]
-        firstSearchList += tmpMatchStrList
-    return firstSearchList
+    return tmpMatchStrList
 
 def solveExtractedUrls(urlList):
     # 对提取到的结果进行处理

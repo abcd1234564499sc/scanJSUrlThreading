@@ -103,16 +103,42 @@ class UrlScrapyManage(QThread):
 
     # 请求地址线程结束信号绑定函数
     def solveThreadResult(self, reDicStr):
+        tmpFolderPathStatusList = []
+        tmpFolderPathStatusList.append("401")
+        tmpFolderPathStatusList.append("403")
+        # tmpFolderPathStatusList.append("500")
+
         if reDicStr != "":
             reDic = json.loads(reDicStr)
             tmpResContent = reDic.pop("content")
             reLinkList = reDic.pop("linkList")
             reSensiveList = reDic.pop("sensiveInfoList")
             reOtherDomainList = reDic.pop("otherDomainList")
-            # 计算返回内容的hash值
-            tmpContentHash = myUtils.calcResponseHash(tmpResContent)
-            if tmpContentHash not in self.fileContentHashList:
-                self.fileContentHashList.append(tmpContentHash)
+
+            tmpResStatus = str(reDic["status"]).strip()
+            tmpUrl = reDic["url"]
+
+            tmpIfShowFlag = False
+            if tmpResStatus[0] == "2":
+                # 对于2开头的响应，计算返回内容的hash值
+                # 计算返回内容的hash值
+                tmpContentHash = myUtils.calcResponseHash(tmpResContent)
+                if tmpContentHash not in self.fileContentHashList:
+                    self.fileContentHashList.append(tmpContentHash)
+                    tmpIfShowFlag = True
+                else:
+                    tmpIfShowFlag = False
+            elif tmpResStatus in tmpFolderPathStatusList:
+                # 请求了一个可能存在的目录，将该URL记录到extraUrlArr
+                tmpAppendUrl = myUtils.getUrlWithoutFilePath(tmpUrl)
+                if tmpAppendUrl not in self.extraUrlArr:
+                    self.extraUrlArr.append(tmpAppendUrl)
+                tmpIfShowFlag = True
+            else:
+                # 其他响应码，仅记录请求结果
+                tmpIfShowFlag = True
+
+            if tmpIfShowFlag:
                 # 写入新的链接
                 for tempLinkItem in reLinkList:
                     tempLink = tempLinkItem[0]
@@ -121,9 +147,10 @@ class UrlScrapyManage(QThread):
                     # tempLinkWithoutArgValue = myUtils.parseUrlWithoutArgsValue(tempLinkItem[0])
                     if tempLink not in self.vistedLinkList:
                         self.vistedLinkList.append(tempLink)
-                        self.urlQueue.put((tempLink, tempStartLink,tempCrawlerUrl))
+                        self.urlQueue.put((tempLink, tempStartLink, tempCrawlerUrl))
                     else:
                         pass
+
                 # 显示结果
                 reDicStr = json.dumps(reDic)
                 self.signal_url_result.emit(reDicStr)
